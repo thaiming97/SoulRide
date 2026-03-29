@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoulRide – Find Your Route</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        /* ─── Variables (Default / Light Mode) ──────────────── */
+        :root {
+            --accent:      #f06a1c;
+            --accent-dim:  rgba(240, 106, 28, 0.12);
+            --accent-glow: rgba(240, 106, 28, 0.28);
+            --text:        #18182a;
+            --text-soft:   #3a3a52;
+            --muted:       rgba(60, 60, 95, 0.5);
+            --glass:       rgba(250, 250, 252, 0.97);
+            --glass-heavy: rgba(255, 255, 255, 1.0);
+            --card:        rgba(255, 255, 255, 0.85);
+            --card-hover:  rgba(255, 255, 255, 0.98);
+            --line:        rgba(0, 0, 0, 0.07);
+            --line-soft:   rgba(0, 0, 0, 0.1);
+            --r-sm:        12px;
+            --r-md:        18px;
+            --r-lg:        24px;
+            
+            /* Light mode specific non-variable colors */
+            --bg-gradient-1: rgba(255, 200, 120, 0.22);
+            --bg-gradient-2: rgba(180, 225, 255, 0.35);
+            --bg-gradient-3: rgba(255, 245, 235, 0.5);
+            --bg-linear: linear-gradient(145deg, #dceefb 0%, #f5f7fa 40%, #fff8f2 75%, #fde8cf 100%);
+            
+            --splash-grad-1: rgba(180, 225, 255, 0.5);
+            --splash-grad-2: rgba(255, 200, 110, 0.3);
+            --splash-linear: linear-gradient(145deg, #d8edfb 0%, #f4f6fa 45%, #fff6ee 80%, #fde5c8 100%);
+            
+            --sidebar-border: rgba(255, 255, 255, 0.9);
+            --logo-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, transparent 100%);
+            --suggestion-bg: rgba(255, 255, 255, 0.97);
+            --tab-bg: rgba(118, 118, 128, 0.12);
+            --tab-hover-bg: rgba(118, 118, 128, 0.06);
+            --tab-active-bg: rgba(255,255,255,0.96);
+            --route-card-border: rgba(255, 255, 255, 0.82);
+        }
+
+        /* ─── Variables (Dark Mode) ─────────────────────────── */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --accent:      #ff7b33;
+                --text:        #f0f0f5;
+                --text-soft:   #c0c0d0;
+                --muted:       rgba(180, 180, 200, 0.5);
+                --glass:       rgba(20, 20, 30, 0.75);
+                --glass-heavy: rgba(30, 30, 45, 0.9);
+                --card:        rgba(40, 40, 55, 0.6);
+                --card-hover:  rgba(55, 55, 75, 0.8);
+                --line:        rgba(255, 255, 255, 0.08);
+                --line-soft:   rgba(255, 255, 255, 0.12);
+
+                --bg-gradient-1: rgba(240, 106, 28, 0.1);
+                --bg-gradient-2: rgba(60, 100, 150, 0.15);
+                --bg-gradient-3: rgba(20, 20, 30, 0.5);
+                --bg-linear: linear-gradient(145deg, #101018 0%, #181824 40%, #1a1a28 75%, #221814 100%);
+
+                --splash-grad-1: rgba(60, 100, 150, 0.2);
+                --splash-grad-2: rgba(240, 106, 28, 0.15);
+                --splash-linear: linear-gradient(145deg, #12121a 0%, #181824 45%, #1c1c28 80%, #241a14 100%);
+                
+                --sidebar-border: rgba(255, 255, 255, 0.05);
+                --logo-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
+                --suggestion-bg: rgba(35, 35, 50, 0.97);
+                --tab-bg: rgba(118, 118, 128, 0.24);
+                --tab-hover-bg: rgba(255, 255, 255, 0.04);
+                --tab-active-bg: rgba(58, 58, 78, 0.96);
+                --route-card-border: rgba(255, 255, 255, 0.05);
+            }
+            
+            /* Specific overrides for Dark Mode shadows */
+            #sidebar { box-shadow: 4px 0 48px rgba(0, 0, 0, 0.6), inset -1px 0 0 var(--sidebar-border) !important; }
+            .route-card { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3) !important; }
+            .route-card:hover, .route-card.active { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important; }
+            input[type="text"]:focus, input[type="number"]:focus { background: rgba(45, 45, 65, 0.95) !important; }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        button, [onclick] { cursor: pointer; }
+
+        html {
+            font-size: 15px;
+        }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'Outfit', sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(ellipse 110% 80% at 0% 100%, var(--bg-gradient-1) 0%, transparent 55%),
+                radial-gradient(ellipse 80% 60% at 100% 0%, var(--bg-gradient-2) 0%, transparent 55%),
+                radial-gradient(ellipse 60% 50% at 50% 50%, var(--bg-gradient-3) 0%, transparent 80%),
+                var(--bg-linear);
+        }
+
+        /* ─── Splash Screen ─────────────────────────────────── */
+        #splash {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 99999;
+            overflow: hidden;
+            background:
+                radial-gradient(ellipse 90% 70% at 80% 10%, var(--splash-grad-1) 0%, transparent 55%),
+                radial-gradient(ellipse 80% 60% at 5% 90%, var(--splash-grad-2) 0%, transparent 55%),
+                var(--splash-linear);
+            animation: splashExit 0.9s cubic-bezier(0.76, 0, 0.24, 1) 4.0s forwards;
+        }
+        /* Sun orb */
+        #splash::before {
+            content: '';
+            position: absolute;
+            width: 520px;
+            height: 520px;
+            top: -200px;
+            right: -100px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 210, 100, 0.5) 0%, rgba(255, 160, 50, 0.18) 45%, transparent 68%);
+            animation: orbPulse 3.2s ease-in-out infinite alternate;
+        }
+        @keyframes orbPulse {
+            from { transform: scale(1);    opacity: 0.85; }
+            to   { transform: scale(1.1);  opacity: 1; }
+        }
+        #splash::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 30%;
+            background: linear-gradient(0deg, rgba(240, 106, 28, 0.06) 0%, transparent 100%);
+            pointer-events: none;
+        }
+        @keyframes splashExit {
+            0%   { opacity: 1; transform: scale(1);    filter: blur(0px);  }
+            100% { opacity: 0; transform: scale(1.06); filter: blur(12px); }
+        }
+
+        .splash-inner {
+            text-align: center;
+            user-select: none;
+            position: relative;
+            z-index: 2;
+        }
+
+        .splash-eyebrow {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.58rem;
+            font-weight: 500;
+            letter-spacing: 0.6em;
+            text-transform: uppercase;
+            color: var(--accent);
+            opacity: 0;
+            margin-bottom: 28px;
+            animation: fadeUp 0.5s ease 0.15s forwards;
+        }
+
+        .splash-logo {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: clamp(2.6rem, 13vw, 13rem);
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            line-height: 1;
+            color: var(--text);
+            white-space: nowrap;
+            padding-right: 0.12em;
+            overflow: visible;
+        }
+
+        .splash-logo .sl {
+            display: inline-block;
+            animation: letterUp 0.55s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+        }
+        .splash-logo .sl.orange { color: var(--accent); }
+
+        .splash-logo .sl:nth-child(1) { animation-delay: 0.00s; }
+        .splash-logo .sl:nth-child(2) { animation-delay: 0.05s; }
+        .splash-logo .sl:nth-child(3) { animation-delay: 0.10s; }
+        .splash-logo .sl:nth-child(4) { animation-delay: 0.15s; }
+        .splash-logo .sl:nth-child(5) { animation-delay: 0.22s; }
+        .splash-logo .sl:nth-child(6) { animation-delay: 0.27s; }
+        .splash-logo .sl:nth-child(7) { animation-delay: 0.32s; }
+        .splash-logo .sl:nth-child(8) { animation-delay: 0.37s; }
+
+        @keyframes letterUp {
+            from { opacity: 0; transform: translateY(50px) scale(0.9); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .splash-rule {
+            height: 1.5px;
+            background: linear-gradient(90deg, transparent, var(--accent), rgba(240, 106, 28, 0.3), transparent);
+            margin: 28px auto;
+            width: 0;
+            animation: ruleExpand 0.5s ease 0.48s forwards;
+        }
+        @keyframes ruleExpand {
+            from { width: 0; opacity: 0; }
+            to   { width: 280px; opacity: 1; }
+        }
+
+        .splash-tagline {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.64rem;
+            letter-spacing: 0.55em;
+            text-transform: uppercase;
+            color: var(--muted);
+            opacity: 0;
+            animation: fadeUp 0.4s ease 0.62s forwards;
+        }
+        .splash-dots {
+            margin-top: 56px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            opacity: 0;
+            animation: fadeUp 0.35s ease 0.8s forwards;
+        }
+        .splash-dots span {
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: rgba(60, 60, 95, 0.15);
+            animation: dotPulse 1.4s ease-in-out infinite;
+        }
+        .splash-dots span:nth-child(1) { animation-delay: 0s; }
+        .splash-dots span:nth-child(2) { animation-delay: 0.2s; background: var(--accent); }
+        .splash-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes dotPulse {
+            0%, 100% { opacity: 0.25; transform: scale(1); }
+            50%       { opacity: 1;    transform: scale(1.5); }
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0);   }
+        }
+
+        /* ─── App Layout ─────────────────────────────────────── */
+        #app {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* ─── Sidebar ────────────────────────────────────────── */
+        #sidebar {
+            width: 340px;
+            min-width: 300px;
+            max-width: 380px;
+            background: var(--glass);
+            backdrop-filter: blur(32px) saturate(2.2);
+            -webkit-backdrop-filter: blur(32px) saturate(2.2);
+            border-right: 1px solid var(--sidebar-border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-shrink: 0;
+            z-index: 1000;
+            box-shadow: 4px 0 48px rgba(0, 0, 0, 0.08),
+                        inset -1px 0 0 var(--sidebar-border);
+            position: relative;
+        }
+        /* Orange top accent stripe */
+        #sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent) 0%, rgba(240, 106, 28, 0.4) 60%, transparent 100%);
+            z-index: 2;
+        }
+
+        /* Logo bar */
+        .logo-bar {
+            padding: 22px 24px 18px;
+            border-bottom: 1px solid var(--line);
+            cursor: pointer;
+            transition: background 0.22s;
+            flex-shrink: 0;
+            background: var(--logo-bg);
+        }
+        .logo-bar:hover { background: rgba(240, 106, 28, 0.04); }
+
+        .logo-wordmark {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 2.1rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text);
+            line-height: 1;
+        }
+        .logo-wordmark .accent-part { color: var(--accent); }
+
+        .logo-sub {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.54rem;
+            letter-spacing: 0.48em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .logo-stripe {
+            margin-top: 14px;
+            height: 1.5px;
+            background: linear-gradient(90deg, var(--accent) 0%, rgba(240, 106, 28, 0.2) 60%, transparent 100%);
+            width: 48%;
+        }
+
+        /* Scrollable panel body */
+        .sidebar-body {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 20px 18px 72px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(240, 106, 28, 0.2) transparent;
+        }
+        .sidebar-body::-webkit-scrollbar { width: 3px; }
+        .sidebar-body::-webkit-scrollbar-thumb { background: rgba(240, 106, 28, 0.25); border-radius: 2px; }
+
+        /* ─── Sections ───────────────────────────────────────── */
+        .section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .section h3,
+        .section-label {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'Outfit', sans-serif;
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            padding-bottom: 8px;
+            margin-bottom: 4px;
+        }
+
+        /* ─── Mode Tabs ──────────────────────────────────────── */
+        .mode-tabs {
+            display: flex;
+            background: var(--tab-bg);
+            border: 1px solid var(--line-soft);
+            border-radius: var(--r-md);
+            padding: 4px;
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 10px 10px;
+            text-align: center;
+            border-radius: calc(var(--r-md) - 4px);
+            cursor: pointer;
+            transition: background 0.22s, color 0.22s, box-shadow 0.22s;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.78em;
+            font-weight: 500;
+            color: var(--muted);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .mode-tab:hover { color: var(--text-soft); background: var(--tab-hover-bg); }
+        .mode-tab:active { transform: scale(0.96); transition: transform 0.1s; }
+        .mode-tab.active {
+            background: var(--tab-active-bg);
+            color: var(--text);
+            font-weight: 700;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        /* ─── Labels & Inputs ────────────────────────────────── */
+        label {
+            display: block;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.59em;
+            font-weight: 500;
+            color: var(--muted);
+            margin-bottom: 7px;
+            letter-spacing: 0.09em;
+            text-transform: uppercase;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid var(--line-soft);
+            border-radius: var(--r-sm);
+            background: var(--glass-heavy);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'Outfit', sans-serif;
+            font-size: 0.87em;
+            transition: border-color 0.22s, box-shadow 0.22s, background 0.22s;
+            outline: none;
+        }
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            border-color: rgba(240, 106, 28, 0.6);
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 0 0 4px rgba(240, 106, 28, 0.12), 0 1px 3px rgba(0,0,0,0.04);
+            transform: translateZ(0);
+        }
+        input::placeholder { color: rgba(120, 120, 140, 0.55); }
+
+        .input-group {
+            margin-bottom: 2px;
+            position: relative;
+        }
+
+        /* ─── Grouped Input Card (Apple Maps style) ───────────── */
+        .input-card {
+            background: var(--glass-heavy);
+            border: 1px solid var(--line-soft);
+            border-radius: var(--r-md);
+            overflow: visible;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.06);
+        }
+        .input-card .input-card-row {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            padding: 0 14px 0 16px;
+            position: relative;
+            overflow: visible;
+        }
+        .input-card .input-card-row .row-icon {
+            font-size: 0.8em;
+            width: 18px;
+            flex-shrink: 0;
+            margin-right: 10px;
+            opacity: 0.45;
+        }
+        .input-card .input-card-row input[type="text"] {
+            border: none !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 13px 0 !important;
+            font-size: 0.88em;
+            flex: 1;
+        }
+        .input-card .input-card-row input[type="text"]:focus {
+            box-shadow: none !important;
+            border: none !important;
+        }
+        .input-card .input-card-row .loc-btn {
+            padding: 7px 9px;
+            background: rgba(240, 106, 28, 0.08);
+            border: 1px solid rgba(240, 106, 28, 0.18);
+            border-radius: 8px;
+            font-size: 0.95em;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: background 0.18s;
+        }
+        .input-card .input-card-row .loc-btn:active { transform: scale(0.9); }
+        .input-card .input-card-divider {
+            height: 1px;
+            background: var(--line);
+            margin: 0 16px;
+        }
+        .input-card .input-card-row .suggestions {
+            top: calc(100% + 6px);
+        }
+
+        /* Autocomplete dropdown */
+        .input-group .suggestions,
+        .input-card-row .suggestions {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: var(--suggestion-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--line-soft);
+            border-radius: var(--r-sm);
+            z-index: 9999;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        }
+        .input-group .suggestions.show,
+        .input-card-row .suggestions.show { display: block; }
+        .suggestions .suggestion {
+            padding: 9px 13px;
+            cursor: pointer;
+            font-size: 0.8em;
+            color: var(--text-soft);
+            border-bottom: 1px solid var(--line);
+            transition: background 0.15s, color 0.15s;
+        }
+        .suggestions .suggestion:last-child { border-bottom: none; }
+        .suggestions .suggestion:hover {
+            background: rgba(240, 106, 28, 0.06);
+            color: var(--accent);
+        }
+
+        /* ─── Route Type Buttons ─────────────────────────────── */
+        .route-type-options { display: flex; gap: 7px; }
+        .route-type-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--line-soft);
+            border-radius: var(--r-sm);
+            background: var(--card);
+            color: var(--muted);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.22s;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.78em;
+            letter-spacing: 0.04em;
+        }
+        .route-type-btn:hover { background: var(--card-hover); color: var(--text-soft); border-color: rgba(240, 106, 28, 0.3); }
+        .route-type-btn:active { transform: scale(0.96); transition: transform 0.1s; }
+        .route-type-btn.active {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 2px 12px rgba(240, 106, 28, 0.3);
+        }
+
+        /* ─── Curviness Buttons ──────────────────────────────── */
+        .curviness-options { display: flex; gap: 7px; }
+        .curviness-btn {
+            flex: 1;
+            padding: 13px 6px;
+            border: 1px solid var(--line-soft);
+            border-radius: var(--r-sm);
+            background: var(--card);
+            color: var(--muted);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.22s;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.74em;
+            letter-spacing: 0.04em;
+        }
+        .curviness-btn:hover { background: var(--card-hover); color: var(--text-soft); border-color: rgba(240, 106, 28, 0.3); }
+        .curviness-btn:active { transform: scale(0.95); transition: transform 0.1s; }
+        .curviness-btn.active {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 2px 12px rgba(240, 106, 28, 0.35);
+        }
+        .curviness-btn .icon {
+            font-size: 1.35em;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* ─── Primary Button ─────────────────────────────────── */
+        .btn-primary {
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 100px;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: transform 0.18s, box-shadow 0.22s, filter 0.18s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(240, 106, 28, 0.38),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.22);
+        }
+        .btn-primary span {
+            letter-spacing: 0.08em;
+            margin-right: -0.08em;
+        }
+        /* Shimmer sweep */
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.55s ease;
+        }
+        .btn-primary:hover::before { left: 100%; }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 36px rgba(240, 106, 28, 0.55);
+            filter: brightness(1.07);
+        }
+        .btn-primary:active { transform: scale(0.97); box-shadow: 0 2px 12px rgba(240, 106, 28, 0.3); transition: transform 0.1s, box-shadow 0.1s; }
+        .btn-primary:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ─── Secondary Buttons ──────────────────────────────── */
+        .btn-secondary {
+            padding: 9px 14px;
+            background: var(--card);
+            color: var(--text-soft);
+            border: 1px solid var(--line-soft);
+            border-radius: var(--r-sm);
+            font-size: 0.8em;
+            font-weight: 500;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.18s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .btn-secondary:hover { background: var(--card-hover); color: var(--text); border-color: rgba(240, 106, 28, 0.3); }
+        .btn-secondary:active { transform: scale(0.96); transition: transform 0.1s; }
+
+        /* ─── Loading ─────────────────────────────────────────── */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 22px 0;
+            color: var(--muted);
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.72em;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+        .loading.show { display: block; }
+        .spinner {
+            width: 26px;
+            height: 26px;
+            border: 2.5px solid transparent;
+            border-top-color: var(--accent);
+            border-right-color: rgba(240, 106, 28, 0.35);
+            border-bottom-color: rgba(240, 106, 28, 0.1);
+            border-radius: 50%;
+            animation: spin 0.72s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+            margin: 0 auto 14px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── API Key Section ─────────────────────────────────── */
+        #api-key-section {
+            background: rgba(240, 106, 28, 0.05);
+            border-radius: var(--r-md);
+            padding: 14px 16px;
+            border: 1px solid rgba(240, 106, 28, 0.22);
+        }
+        #api-key-section p { font-size: 0.76em; color: var(--muted); margin-bottom: 8px; }
+        #api-key-section a { color: var(--accent); }
+
+        /* ─── Range Input ─────────────────────────────────────── */
+        .range-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72em;
+            color: var(--muted);
+            margin-top: 5px;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent);
+            margin: 8px 0;
+            border: none;
+        }
+
+        /* ─── Distance Warning ────────────────────────────────── */
+        .distance-warning {
+            background: rgba(255, 160, 0, 0.07);
+            color: #b07000;
+            padding: 9px 13px;
+            border-radius: var(--r-sm);
+            font-size: 0.78em;
+            margin-bottom: 6px;
+            border: 1px solid rgba(255, 160, 0, 0.2);
+        }
+
+        /* ─── Results ─────────────────────────────────────────── */
+        #results { display: none; }
+
+        .route-card {
+            background: var(--card);
+            border-radius: var(--r-md);
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            border: 1px solid var(--route-card-border);
+            border-left: 3px solid transparent;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);
+            transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.22s, background 0.22s, border-color 0.22s;
+        }
+        .route-card:hover,
+        .route-card.active {
+            background: var(--card-hover);
+            border-left-color: var(--accent);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 28px rgba(0,0,0,0.11);
+            transform: translateY(-1px);
+        }
+        .route-card:active {
+            transform: scale(0.985);
+            transition: transform 0.1s;
+        }
+        .route-card .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 9px;
+        }
+        .route-card .route-name {
+            font-family: 'Chakra Petch', sans-serif;
+            font-weight: 600;
+            font-size: 0.9em;
+            letter-spacing: 0.03em;
+            color: var(--text);
+        }
+        .route-card .curviness-badge {
+            background: rgba(240, 106, 28, 0.1);
+            color: var(--accent);
+            padding: 2px 9px;
+            border-radius: 20px;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.66em;
+            font-weight: 700;
+            border: 1px solid rgba(240, 106, 28, 0.25);
+            letter-spacing: 0.06em;
+        }
+        .route-card .route-stats {
+            display: flex;
+            gap: 12px;
+            font-size: 0.78em;
+            color: var(--muted);
+            flex-wrap: wrap;
+        }
+        .route-card .route-stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .route-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 11px;
+            flex-wrap: wrap;
+        }
+
+        /* ─── Map ──────────────────────────────────────────────── */
+        #map { flex: 1; min-width: 0; background: #e5e5e5; }
+        @media (prefers-color-scheme: dark) { #map { background: #262626; } }
+
+        /* ─── Map Hint ─────────────────────────────────────────── */
+        .map-hint {
+            background: rgba(20, 20, 30, 0.92);
+            backdrop-filter: blur(12px);
+            color: var(--accent);
+            padding: 8px 18px;
+            border-radius: var(--r-sm);
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.72em;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            border: 1px solid rgba(255, 101, 0, 0.25);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 101, 0, 0.1);
+        }
+
+        /* ─── Utilities ────────────────────────────────────────── */
+        .hidden { display: none !important; }
+
+        /* ─── Sheet Handle (mobile only, hidden on desktop) ────── */
+        .sheet-handle { display: none; }
+
+        /* ─── Responsive: Bottom Sheet ─────────────────────────── */
+        @media (max-width: 600px) {
+            #app {
+                position: relative;
+                overflow: hidden;
+            }
+            #map {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+            }
+            #sidebar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                min-width: unset;
+                max-width: unset;
+                height: 82vh;
+                transform: translateY(calc(100% - 106px));
+                transition: transform 0.46s cubic-bezier(0.32, 0.72, 0, 1);
+                border-right: none;
+                border-top: 1px solid rgba(255, 255, 255, 0.07);
+                border-radius: 22px 22px 0 0;
+                box-shadow: 0 -8px 50px rgba(0, 0, 0, 0.8),
+                            0 -1px 0 rgba(255, 101, 0, 0.2) !important;
+                z-index: 1001;
+                overflow: hidden;
+            }
+            #sidebar.sheet-open {
+                transform: translateY(0);
+            }
+            .sheet-handle {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 10px 0 4px;
+                cursor: pointer;
+                flex-shrink: 0;
+            }
+            .sheet-handle::after {
+                content: '';
+                width: 36px;
+                height: 5px;
+                background: var(--line-soft);
+                border-radius: 3px;
+            }
+            .logo-bar { padding: 10px 20px 10px; }
+            .logo-wordmark { font-size: 1.7rem; }
+            .logo-sub { display: none; }
+            .logo-stripe { margin-top: 8px; }
+            .sidebar-body { padding: 12px 16px 32px; gap: 12px; }
+            .btn-primary { font-size: 0.9rem; padding: 13px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="splash">
+        <div class="splash-inner">
+            <div class="splash-eyebrow">Discover the road less travelled</div>
+            <div class="splash-logo">
+                <span class="sl">S</span><span class="sl">o</span><span class="sl">u</span><span class="sl">l</span><span class="sl orange">R</span><span class="sl orange">i</span><span class="sl orange">d</span><span class="sl orange">e</span>
+            </div>
+            <div class="splash-rule"></div>
+            <div class="splash-tagline">Find your route</div>
+            <div class="splash-dots">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    </div>
+
+    <div id="app">
+
+        <div id="sidebar">
+
+            <div class="sheet-handle" onclick="toggleSheet()"></div>
+
+            <div class="logo-bar"
+                 onclick="document.getElementById('api-key-section').classList.toggle('hidden')"
+                 title="API-Einstellungen">
+                <div class="logo-wordmark">Soul<span class="accent-part">Ride</span></div>
+                <div class="logo-sub">Find your route</div>
+                <div class="logo-stripe"></div>
+            </div>
+
+            <div class="sidebar-body">
+
+                <input type="hidden" id="ghKey"  value="3d6431f2-27a7-4bbb-8a49-1dd858cfc6bf">
+                <input type="hidden" id="ghKey2" value="e277050a-2936-45e9-8246-b5223a25123f">
+                <input type="hidden" id="apiKey"  value="eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjBmZmQzMGJkNmRkYTRhNTFhMzU4Y2M0ZGNlNzhmZTM2IiwiaCI6Im11cm11cjY0In0=">
+                <input type="hidden" id="apiKey2" value="eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjM1MzM2MjFkYThiOTRhZWU4ZTVkNTQyNjA5MzE4MDkxIiwiaCI6Im11cm11cjY0In0=">
+                <input type="hidden" id="apiKey3" value="eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImRkNWJlZGE1MTQ0YzQ2Y2ZiMmE2YmY4YTA1M2M4MjQwIiwiaCI6Im11cm11cjY0In0=">
+
+                <div id="api-key-section" class="section hidden">
+                    <h3>API-Keys</h3>
+                    <div class="input-group">
+                        <label>Key 1</label>
+                        <input type="text" id="apiKeyVisible"  value="eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjBmZmQzMGJkNmRkYTRhNTFhMzU4Y2M0ZGNlNzhmZTM2IiwiaCI6Im11cm11cjY0In0=" placeholder="API-Key 1...">
+                    </div>
+                    <div class="input-group">
+                        <label>Key 2</label>
+                        <input type="text" id="apiKeyVisible2" value="eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjM1MzM2MjFkYThiOTRhZWU4ZTVkNTQyNjA5MzE4MDkxIiwiaCI6Im11cm11cjY0In0=" placeholder="API-Key 2 (optional)...">
+                    </div>
+                    <div class="input-group">
+                        <label>Key 3</label>
+                        <input type="text" id="apiKeyVisible3" value="eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImRkNWJlZGE1MTQ0YzQ2Y2ZiMmE2YmY4YTA1M2M4MjQwIiwiaCI6Im11cm11cjY0In0=" placeholder="API-Key 3 (optional)...">
+                    </div>
+                    <div class="input-group">
+                        <label>GraphHopper Key (für Routen &gt;100km)</label>
+                        <input type="text" id="ghKeyVisible" value="3d6431f2-27a7-4bbb-8a49-1dd858cfc6bf" placeholder="GraphHopper API-Key...">
+                    </div>
+                    <div class="input-group">
+                        <label>GraphHopper Key 2 (Fallback)</label>
+                        <input type="text" id="ghKeyVisible2" value="e277050a-2936-45e9-8246-b5223a25123f" placeholder="GraphHopper API-Key 2...">
+                    </div>
+                    <button class="btn-secondary" onclick="saveApiKey()" style="width:100%;margin-top:4px;">Speichern</button>
+                </div>
+
+                <div class="mode-tabs">
+                    <div class="mode-tab active" data-mode="moto" onclick="switchMode('moto')">Motorrad</div>
+                    <div class="mode-tab" data-mode="bike" onclick="switchMode('bike')">Fahrrad</div>
+                </div>
+
+                <div class="section" id="route-type-section">
+                    <h3>Routentyp</h3>
+                    <div class="route-type-options">
+                        <div class="route-type-btn active" data-type="ab" onclick="switchRouteType('ab')">A nach B</div>
+                        <div class="route-type-btn" data-type="round" onclick="switchRouteType('round')">Rundkurs</div>
+                    </div>
+                </div>
+
+                <div class="section" id="location-section">
+                    <h3>Route</h3>
+                    <div class="input-card">
+                        <div class="input-card-row">
+                            <span class="row-icon">●</span>
+                            <input type="text" id="startInput" placeholder="Startpunkt..."
+                                   oninput="geocodeDebounce('start')" onfocus="showSuggestions('start')">
+                            <div class="suggestions" id="startSuggestions"></div>
+                            <button class="loc-btn" onclick="useMyLocation(this)" title="Mein Standort">📍</button>
+                        </div>
+                        <div id="destGroup">
+                            <div class="input-card-divider"></div>
+                            <div class="input-card-row">
+                                <span class="row-icon">◆</span>
+                                <input type="text" id="destInput" placeholder="Zielpunkt..."
+                                       oninput="geocodeDebounce('dest')" onfocus="showSuggestions('dest')">
+                                <div class="suggestions" id="destSuggestions"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section hidden" id="round-options">
+                    <h3>Rundkurs</h3>
+                    <div class="input-group">
+                        <label>Gewünschte Distanz (km)</label>
+                        <input type="number" id="roundDistance" value="100" min="10" max="500" step="10">
+                    </div>
+                    <div id="viaContainer">
+                        <label style="margin-top:8px;">Zwischenziele (optional)</label>
+                        <div class="input-group" style="margin-top:4px;">
+                            <input type="text" id="via1Input" placeholder="z.B. Lieblingseisdiele..."
+                                   oninput="geocodeDebounce('via1')" onfocus="showSuggestions('via1')">
+                            <div class="suggestions" id="via1Suggestions"></div>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="via2Input" placeholder="Weiteres Zwischenziel..."
+                                   oninput="geocodeDebounce('via2')" onfocus="showSuggestions('via2')">
+                            <div class="suggestions" id="via2Suggestions"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section" id="curviness-section">
+                    <h3>Kurvigkeit</h3>
+                    <div class="curviness-options">
+                        <div class="curviness-btn" data-level="1" onclick="setCurviness(1)">
+                            <span class="icon">~</span>
+                            Wenig
+                        </div>
+                        <div class="curviness-btn active" data-level="2" onclick="setCurviness(2)">
+                            <span class="icon">∿</span>
+                            Mittel
+                        </div>
+                        <div class="curviness-btn" data-level="3" onclick="setCurviness(3)">
+                            <span class="icon">≈</span>
+                            Maximal
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section hidden" id="elevation-section">
+                    <h3>Höhenprofil</h3>
+                    <div class="input-group">
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" id="elevationEnabled" onchange="toggleElevationSlider()"
+                                   style="width:auto;margin:0;accent-color:var(--accent);">
+                            Höhenmeter begrenzen
+                        </label>
+                    </div>
+                    <div class="input-group hidden" id="elevationSliderGroup">
+                        <label>Max. Höhenmeter</label>
+                        <input type="range" id="maxElevation" min="50" max="5000" step="50" value="500"
+                               oninput="updateElevationLabel()">
+                        <div class="range-display">
+                            <span>50 hm</span>
+                            <span id="elevationValue">500 hm</span>
+                            <span>5000 hm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="searchBtn" onclick="searchRoutes()"><span>Route suchen</span></button>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Suche kurvige Routen...</p>
+                </div>
+
+                <div id="results" class="section">
+                    <h3>Gefundene Routen</h3>
+                    <div id="routeCards"></div>
+                </div>
+
+            </div></div><div id="map"></div>
+    </div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    // Remove splash after animation completes
+    document.getElementById('splash').addEventListener('animationend', function() {
+        this.style.display = 'none';
+    });
+
+    // ── Bottom sheet (mobile) ──
+    function toggleSheet() {
+        document.getElementById('sidebar').classList.toggle('sheet-open');
+    }
+    // Auto-expand when user taps an input
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('#sidebar input').forEach(input => {
+            input.addEventListener('focus', () => {
+                if (window.innerWidth <= 600) {
+                    document.getElementById('sidebar').classList.add('sheet-open');
+                }
+            });
+        });
+        // Tap on logo bar also toggles sheet on mobile
+        document.querySelector('.logo-bar').addEventListener('click', (e) => {
+            if (window.innerWidth <= 600) {
+                e.stopPropagation();
+                toggleSheet();
+            }
+        }, true);
+    });
+
+    // ============== State ==============
+    let map, currentMode = 'moto', routeType = 'ab', curvinessLevel = 2;
+    let startCoords = null, destCoords = null;
+    let via1Coords = null, via2Coords = null;
+    let startMarker = null, destMarker = null, via1Marker = null, via2Marker = null;
+    let routeLayers = [];
+    let foundRoutes = [];
+    let usedFallback = false;
+    let geocodeTimers = {};
+    let tileLayer;
+
+    const ORS_BASE = 'https://api.openrouteservice.org';
+    const GH_BASE  = 'https://graphhopper.com/api/1/route';
+    const COLORS = ['#f06a1c', '#00d2ff', '#7b2ff7', '#ff6b35', '#00c853'];
+
+    // Map themes
+    const mapThemes = {
+        light: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+        dark: 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png'
+    };
+
+    function updateMapTheme(e) {
+        if(tileLayer) {
+            tileLayer.setUrl(e.matches ? mapThemes.dark : mapThemes.light);
+        }
+    }
+
+    // ============== Init ==============
+    document.addEventListener('DOMContentLoaded', () => {
+        map = L.map('map').setView([50.0, 10.0], 7);
+        
+        // Check system preference
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+        
+        tileLayer = L.tileLayer(prefersDark.matches ? mapThemes.dark : mapThemes.light, {
+            attribution: '© <a href="https://carto.com/">CARTO</a> © <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Listen for OS theme changes
+        if(prefersDark.addEventListener) {
+            prefersDark.addEventListener('change', updateMapTheme);
+        }
+
+        // Load saved API key
+        const saved = localStorage.getItem('ors_api_key');
+        if (saved) {
+            document.getElementById('apiKey').value = saved;
+            document.getElementById('api-key-section').style.borderColor = '#0f3460';
+        }
+
+        // Click on map to set start/dest
+        map.on('click', async (e) => {
+            const {lat, lng} = e.latlng;
+            if (!startCoords || (startCoords && destCoords)) {
+                startCoords = [lng, lat];
+                destCoords = null;
+                setMarker('start', lat, lng);
+                removeMarker('dest');
+                clearRoutes();
+                const name = await reverseGeocode(lat, lng);
+                document.getElementById('startInput').value = name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            } else {
+                destCoords = [lng, lat];
+                setMarker('dest', lat, lng);
+                const name = await reverseGeocode(lat, lng);
+                document.getElementById('destInput').value = name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            }
+        });
+
+        // Close suggestions on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.input-group')) {
+                document.querySelectorAll('.suggestions').forEach(s => s.classList.remove('show'));
+            }
+        });
+    });
+
+    // ============== API Key ==============
+    let _orsKeyIndex = 0;
+
+    function getApiKey() {
+        const keys = ['apiKey', 'apiKey2', 'apiKey3']
+            .map(id => document.getElementById(id).value.trim())
+            .filter(k => k.length > 0);
+        if (keys.length === 0) return '';
+        return keys[_orsKeyIndex++ % keys.length];
+    }
+
+    function saveApiKey() {
+        [['apiKeyVisible','apiKey','ors_api_key'],
+         ['apiKeyVisible2','apiKey2','ors_api_key2'],
+         ['apiKeyVisible3','apiKey3','ors_api_key3'],
+         ['ghKeyVisible','ghKey','gh_api_key'],
+         ['ghKeyVisible2','ghKey2','gh_api_key2']].forEach(([visId, hidId, lsKey]) => {
+            const val = document.getElementById(visId)?.value.trim();
+            if (val) {
+                document.getElementById(hidId).value = val;
+                try { localStorage.setItem(lsKey, val); } catch(e) {}
+            }
+        });
+        const btn = document.querySelector('#api-key-section .btn-secondary');
+        btn.textContent = 'Gespeichert!';
+        setTimeout(() => { btn.textContent = 'Speichern'; }, 2000);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        ['apiKeyVisible','apiKeyVisible2','apiKeyVisible3'].forEach(id => {
+            document.getElementById(id).addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') saveApiKey();
+            });
+        });
+        [['ors_api_key','apiKey','apiKeyVisible'],
+         ['ors_api_key2','apiKey2','apiKeyVisible2'],
+         ['ors_api_key3','apiKey3','apiKeyVisible3'],
+         ['gh_api_key','ghKey','ghKeyVisible'],
+         ['gh_api_key2','ghKey2','ghKeyVisible2']].forEach(([lsKey, hidId, visId]) => {
+            const saved = localStorage.getItem(lsKey);
+            if (saved) {
+                document.getElementById(hidId).value = saved;
+                const visEl = document.getElementById(visId);
+                if (visEl) visEl.value = saved;
+            }
+        });
+    });
+
+    // ============== Mode Switching ==============
+    function switchMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+
+        if (mode === 'bike') {
+            routeType = 'round';
+            document.getElementById('route-type-section').classList.add('hidden');
+            document.getElementById('destGroup').classList.add('hidden');
+            document.getElementById('round-options').classList.remove('hidden');
+            document.getElementById('curviness-section').classList.add('hidden');
+            document.getElementById('elevation-section').classList.remove('hidden');
+        } else {
+            document.getElementById('route-type-section').classList.remove('hidden');
+            document.getElementById('curviness-section').classList.remove('hidden');
+            document.getElementById('elevation-section').classList.add('hidden');
+            switchRouteType(routeType);
+        }
+        clearRoutes();
+    }
+
+    function switchRouteType(type) {
+        routeType = type;
+        document.querySelectorAll('.route-type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+        if (type === 'round') {
+            document.getElementById('destGroup').classList.add('hidden');
+            document.getElementById('round-options').classList.remove('hidden');
+        } else {
+            document.getElementById('destGroup').classList.remove('hidden');
+            document.getElementById('round-options').classList.add('hidden');
+        }
+    }
+
+    function setCurviness(level) {
+        curvinessLevel = level;
+        document.querySelectorAll('.curviness-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.level) === level));
+    }
+
+    function updateElevationLabel() {
+        document.getElementById('elevationValue').textContent = document.getElementById('maxElevation').value + ' hm';
+    }
+
+    function toggleElevationSlider() {
+        const enabled = document.getElementById('elevationEnabled').checked;
+        document.getElementById('elevationSliderGroup').classList.toggle('hidden', !enabled);
+    }
+
+    // ============== Geocoding ==============
+    function geocodeDebounce(which) {
+        clearTimeout(geocodeTimers[which]);
+        geocodeTimers[which] = setTimeout(() => geocode(which), 400);
+    }
+
+    const inputMap = { start: 'startInput', dest: 'destInput', via1: 'via1Input', via2: 'via2Input' };
+    const suggestMap = { start: 'startSuggestions', dest: 'destSuggestions', via1: 'via1Suggestions', via2: 'via2Suggestions' };
+
+    async function geocode(which) {
+        const input = document.getElementById(inputMap[which]);
+        const query = input.value.trim();
+        if (query.length < 3) return;
+
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=de,at,ch,it,fr&limit=6&addressdetails=1`);
+            const data = await res.json();
+            const features = data.map(item => ({
+                geometry: { coordinates: [parseFloat(item.lon), parseFloat(item.lat)] },
+                properties: { label: item.display_name.split(',').slice(0, 3).join(',') }
+            }));
+            showGeocodeSuggestions(which, features);
+        } catch(e) { console.error('Geocode error:', e); }
+    }
+
+    function showGeocodeSuggestions(which, features) {
+        const container = document.getElementById(suggestMap[which]);
+        container.innerHTML = '';
+        features.forEach(f => {
+            const div = document.createElement('div');
+            div.className = 'suggestion';
+            div.textContent = f.properties.label;
+            div.addEventListener('click', () => {
+                const [lng, lat] = f.geometry.coordinates;
+                if (which === 'start') {
+                    startCoords = [lng, lat];
+                    document.getElementById('startInput').value = f.properties.label;
+                    setMarker('start', lat, lng);
+                    map.setView([lat, lng], 11);
+                } else if (which === 'dest') {
+                    destCoords = [lng, lat];
+                    document.getElementById('destInput').value = f.properties.label;
+                    setMarker('dest', lat, lng);
+                } else if (which === 'via1') {
+                    via1Coords = [lng, lat];
+                    document.getElementById('via1Input').value = f.properties.label;
+                    setMarker('via1', lat, lng);
+                } else if (which === 'via2') {
+                    via2Coords = [lng, lat];
+                    document.getElementById('via2Input').value = f.properties.label;
+                    setMarker('via2', lat, lng);
+                }
+                container.classList.remove('show');
+            });
+            container.appendChild(div);
+        });
+        if (features.length > 0) container.classList.add('show');
+    }
+
+    function showSuggestions(which) {
+        const input = document.getElementById(which === 'start' ? 'startInput' : 'destInput');
+        if (input.value.trim().length >= 3) geocode(which);
+    }
+
+    async function reverseGeocode(lat, lng) {
+        const key = getApiKey();
+        if (!key) return null;
+        try {
+            const res = await fetch(`${ORS_BASE}/geocode/reverse?api_key=${key}&point.lon=${lng}&point.lat=${lat}&size=1`);
+            const data = await res.json();
+            if (data.features && data.features.length > 0) return data.features[0].properties.label;
+        } catch(e) {}
+        return null;
+    }
+
+    // ============== GPS Location ==============
+    function useMyLocation(btn) {
+        btn.textContent = '...';
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => applyLocation(pos.coords.latitude, pos.coords.longitude, btn),
+                () => ipFallbackLocation(btn),
+                // FIX: enableHighAccuracy false → kein GPS-Kaltstart, nutzt Netz/WLAN (viel schneller)
+                // FIX: timeout 20s statt 10s, maximumAge erlaubt gecachten Standort (1 Min.)
+                { enableHighAccuracy: false, timeout: 20000, maximumAge: 60000 }
+            );
+        } else {
+            ipFallbackLocation(btn);
+        }
+    }
+
+    async function ipFallbackLocation(btn) {
+        try {
+            const res = await fetch('https://ipapi.co/json/');
+            const data = await res.json();
+            if (data.latitude && data.longitude) {
+                applyLocation(data.latitude, data.longitude, btn);
+            } else {
+                throw new Error('Keine Koordinaten');
+            }
+        } catch(e) {
+            alert('Standort konnte nicht ermittelt werden. Bitte manuell eingeben.');
+            btn.innerHTML = '📍';
+        }
+    }
+
+    async function applyLocation(lat, lng, btn) {
+        startCoords = [lng, lat];
+        setMarker('start', lat, lng);
+        map.setView([lat, lng], 12);
+        const name = await reverseGeocode(lat, lng);
+        document.getElementById('startInput').value = name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        btn.innerHTML = '📍';
+    }
+
+    // ============== Markers ==============
+    function makeFlagSvg(color) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="40" viewBox="0 0 30 40">
+            <line x1="4" y1="4" x2="4" y2="40" stroke="${color}" stroke-width="3"/>
+            <polygon points="4,4 28,11 4,18" fill="${color}" opacity="0.9"/>
+        </svg>`;
+    }
+
+    const markerColors = { start: '#00c853', dest: '#f06a1c', via1: '#00d2ff', via2: '#7b2ff7' };
+
+    function setMarker(which, lat, lng) {
+        const icon = L.divIcon({
+            html: makeFlagSvg(markerColors[which] || '#fff'),
+            iconSize: [30, 40],
+            iconAnchor: [4, 40],
+            className: ''
+        });
+
+        const markers = { start: startMarker, dest: destMarker, via1: via1Marker, via2: via2Marker };
+        if (markers[which]) map.removeLayer(markers[which]);
+
+        const newMarker = L.marker([lat, lng], {icon}).addTo(map);
+        if (which === 'start') startMarker = newMarker;
+        else if (which === 'dest') destMarker = newMarker;
+        else if (which === 'via1') via1Marker = newMarker;
+        else if (which === 'via2') via2Marker = newMarker;
+    }
+
+    function removeMarker(which) {
+        const markers = { start: startMarker, dest: destMarker, via1: via1Marker, via2: via2Marker };
+        if (markers[which]) { map.removeLayer(markers[which]); }
+        if (which === 'start') startMarker = null;
+        if (which === 'dest') destMarker = null;
+        if (which === 'via1') via1Marker = null;
+        if (which === 'via2') via2Marker = null;
+    }
+
+    // ============== Route Searching ==============
+    async function searchRoutes() {
+        const key = getApiKey();
+        if (!key) { alert('Bitte zuerst einen API-Key eintragen!'); return; }
+        if (!startCoords) { alert('Bitte Startpunkt setzen!'); return; }
+        if (routeType === 'ab' && !destCoords) { alert('Bitte Zielpunkt setzen!'); return; }
+
+        const loading = document.getElementById('loading');
+        const searchBtn = document.getElementById('searchBtn');
+        loading.classList.add('show');
+        searchBtn.disabled = true;
+        clearRoutes();
+        usedFallback = false;
+        document.getElementById('results').style.display = 'none';
+        foundRoutes = [];
+
+        const profile = currentMode === 'moto' ? 'driving-car' : 'cycling-regular';
+
+        try {
+            if (routeType === 'round') {
+                await searchRoundTrips(key, profile);
+            } else {
+                await searchABRoutes(key, profile);
+            }
+
+            displayResults();
+        } catch(e) {
+            console.error('Route search error:', e);
+            alert('Fehler bei der Routensuche: ' + e.message);
+        }
+
+        loading.classList.remove('show');
+        searchBtn.disabled = false;
+    }
+
+    async function searchABRoutes(key, profile) {
+        const promises = [];
+        promises.push(fetchDirectRoute(key, profile, startCoords, destCoords));
+
+        const dx = destCoords[0] - startCoords[0];
+        const dy = destCoords[1] - startCoords[1];
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const perpX = -dy / dist;
+        const perpY = dx / dist;
+
+        const offsets = curvinessLevel === 1 ? [0.02, -0.02] :
+                        curvinessLevel === 2 ? [0.05, -0.05, 0.08] :
+                                               [0.1, -0.1, 0.15, -0.15];
+
+        for (const offset of offsets) {
+            const midLng = (startCoords[0] + destCoords[0]) / 2 + perpX * offset;
+            const midLat = (startCoords[1] + destCoords[1]) / 2 + perpY * offset;
+            promises.push(fetchRouteViaWaypoint(key, profile, startCoords, [midLng, midLat], destCoords));
+        }
+
+        const results = await Promise.allSettled(promises);
+        results.forEach(r => {
+            if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value);
+        });
+
+        foundRoutes.sort((a, b) => {
+            if (curvinessLevel === 1) return a.curviness - b.curviness;
+            return b.curviness - a.curviness;
+        });
+        foundRoutes = foundRoutes.slice(0, 3);
+    }
+
+    function generateCircleWaypoints(start, radiusKm, numPoints, angleOffsetDeg) {
+        const points = [];
+        const R = 6371;
+        const startLat = start[1] * Math.PI / 180;
+        const startLng = start[0] * Math.PI / 180;
+        const angularDist = radiusKm / R;
+        const offsetRad = angleOffsetDeg * Math.PI / 180;
+
+        for (let i = 0; i < numPoints; i++) {
+            const bearing = offsetRad + (2 * Math.PI * i) / numPoints;
+            const lat = Math.asin(
+                Math.sin(startLat) * Math.cos(angularDist) +
+                Math.cos(startLat) * Math.sin(angularDist) * Math.cos(bearing)
+            );
+            const lng = startLng + Math.atan2(
+                Math.sin(bearing) * Math.sin(angularDist) * Math.cos(startLat),
+                Math.cos(angularDist) - Math.sin(startLat) * Math.sin(lat)
+            );
+            points.push([lng * 180 / Math.PI, lat * 180 / Math.PI]);
+        }
+        return points;
+    }
+
+    async function searchRoundTrips(key, profile) {
+        const distanceKm = parseFloat(document.getElementById('roundDistance').value);
+        const distance   = distanceKm * 1000;
+        const elevationEnabled = currentMode === 'bike' && document.getElementById('elevationEnabled').checked;
+        const maxElevation     = elevationEnabled ? parseInt(document.getElementById('maxElevation').value) : null;
+
+        const viaPoints = [];
+        if (via1Coords) viaPoints.push(via1Coords);
+        if (via2Coords) viaPoints.push(via2Coords);
+
+        // ── Stufe 1: ORS (≤100 km) oder GraphHopper (>100 km) ──────────────
+        let apiOk = false;
+
+        if (distanceKm <= 150) {
+            // ORS round_trip
+            try {
+                const seeds = Array.from({length: 6}, () => Math.floor(Math.random() * 900) + 1);
+                const promises = seeds.map(seed =>
+                    fetchRoundTrip(getApiKey(), profile, startCoords, distance, seed, viaPoints, seed)
+                );
+                const results = await Promise.allSettled(promises);
+                results.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+                if (foundRoutes.length > 0) apiOk = true;
+            } catch(e) {
+                console.warn('ORS fehlgeschlagen:', e);
+            }
+        } else {
+            // GraphHopper round_trip – Key1 dann Key2
+            const ghKey1 = document.getElementById('ghKey').value.trim();
+            const ghKey2 = document.getElementById('ghKey2').value.trim();
+            const ghProfile = currentMode === 'moto' ? 'car' : 'bike';
+
+            for (const ghKey of [ghKey1, ghKey2].filter(k => k)) {
+                try {
+                    const seeds = [
+                        Math.floor(Math.random() * 90000) + 1,
+                        Math.floor(Math.random() * 90000) + 1
+                    ];
+                    const allRoutes = [];
+                    let rateLimited = false;
+
+                    for (const seed of seeds) {
+                        const route = await fetchGHRoundTrip(ghKey, ghProfile, startCoords, distance, seed);
+                        if (route === 'RATE_LIMIT') { rateLimited = true; break; }
+                        if (route) allRoutes.push(route);
+                        await new Promise(r => setTimeout(r, 800));
+                    }
+
+                    if (!rateLimited && allRoutes.length > 0) {
+                        allRoutes.sort((a, b) =>
+                            curvinessLevel === 1 ? a.curviness - b.curviness : b.curviness - a.curviness
+                        );
+                        foundRoutes.push(...allRoutes.slice(0, 3));
+                        apiOk = true;
+                        break;
+                    }
+                } catch(e) {
+                    console.warn('GH fehlgeschlagen:', e);
+                }
+            }
+        }
+
+        // ── Stufe 2: Interner Fallback wenn API fehlschlug ──────────────────
+        if (!apiOk) {
+            usedFallback = true;
+            const radiusKm     = distanceKm / (2 * Math.PI) * 0.55;
+            const numWaypoints = curvinessLevel === 3 ? 5 : curvinessLevel === 2 ? 4 : 3;
+
+            if (viaPoints.length > 0) {
+                // Mit Zwischenziel: einfache Hin-und-Rückfahrt mit leicht versetzten Rückwegen
+                const keys = ['apiKey','apiKey2','apiKey3']
+                    .map(id => document.getElementById(id).value.trim()).filter(k => k);
+                const fbKey = keys[0] || key;
+                const fbPromises = [0,1,2,3,4,5].map(v =>
+                    fetchRoundTripViaSimple(fbKey, profile, startCoords, distance, viaPoints, v)
+                );
+                const fbResults = await Promise.allSettled(fbPromises);
+                fbResults.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+            } else {
+                // Ohne Zwischenziel: Kreisrouten in alle Himmelsrichtungen
+                const angles   = [0, 45, 90, 135, 180, 225, 270, 315];
+                const fbPromises = angles.map(angle => {
+                    const waypoints = generateCircleWaypoints(startCoords, radiusKm, numWaypoints, angle);
+                    return fetchManualRoundTrip(getApiKey(), profile, startCoords, waypoints, angle);
+                });
+                const fbResults = await Promise.allSettled(fbPromises);
+                fbResults.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+            }
+        }
+
+        // ── Nachbearbeitung ──────────────────────────────────────────────────
+        if (maxElevation) {
+            foundRoutes = foundRoutes.filter(r => (r.ascent || 0) <= maxElevation);
+        }
+
+        if (viaPoints.length === 0 && foundRoutes.length > 0) {
+            foundRoutes.forEach(r => { r._zipfelKm = detectZipfelKm(r.coords); });
+            const clean = foundRoutes.filter(r => r._zipfelKm < 2);
+            if (clean.length > 0) foundRoutes = clean;
+            else foundRoutes.sort((a, b) => a._zipfelKm - b._zipfelKm);
+        }
+
+        const inRange = foundRoutes.filter(r => Math.abs(r.distance - distance) <= distance * 0.10);
+        if (inRange.length > 0) {
+            inRange.sort((a, b) => currentMode === 'moto'
+                ? (curvinessLevel === 1 ? a.curviness - b.curviness : b.curviness - a.curviness)
+                : Math.abs(a.distance - distance) - Math.abs(b.distance - distance)
+            );
+            foundRoutes = inRange;
+        } else {
+            foundRoutes.sort((a, b) => currentMode === 'moto'
+                ? (curvinessLevel === 1 ? a.curviness - b.curviness : b.curviness - a.curviness)
+                : Math.abs(a.distance - distance) - Math.abs(b.distance - distance)
+            );
+        }
+
+        foundRoutes = foundRoutes.slice(0, 3);
+        foundRoutes._desiredDistance = distance;
+    }
+    // ============== API Calls ==============
+    function getAvoidOptions() {
+        if (currentMode === 'bike') return {};
+        if (curvinessLevel === 1) return {};
+        return { avoid_features: ['highways'] };
+    }
+
+    async function fetchDirectRoute(key, profile, start, end) {
+        const body = {
+            coordinates: [start, end],
+            elevation: true,
+            extra_info: ['steepness'],
+            geometry_simplify: false,
+            options: getAvoidOptions()
+        };
+
+        const res = await fetch(`${ORS_BASE}/v2/directions/${profile}/geojson`, {
+            method: 'POST',
+            headers: { 'Authorization': key, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (!res.ok) throw new Error(`API Fehler: ${res.status}`);
+        const data = await res.json();
+        return processRoute(data, 'Direkte Route');
+    }
+
+    async function fetchRouteViaWaypoint(key, profile, start, via, end) {
+        const body = {
+            coordinates: [start, via, end],
+            elevation: true,
+            extra_info: ['steepness'],
+            geometry_simplify: false,
+            options: getAvoidOptions()
+        };
+
+        const res = await fetch(`${ORS_BASE}/v2/directions/${profile}/geojson`, {
+            method: 'POST',
+            headers: { 'Authorization': key, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (!res.ok) return null;
+        const data = await res.json();
+        return processRoute(data, 'Alternative Route');
+    }
+
+    function makeAvoidCircle(centerLng, centerLat, radiusKm) {
+        const pts = [];
+        const lf = 1 / (111 * Math.cos(centerLat * Math.PI / 180));
+        const af = 1 / 111;
+        for (let i = 0; i <= 32; i++) {
+            const a = (2 * Math.PI * i) / 32;
+            pts.push([centerLng + radiusKm * lf * Math.cos(a), centerLat + radiusKm * af * Math.sin(a)]);
+        }
+        return { type: 'Polygon', coordinates: [pts] };
+    }
+
+    function buildRouteAvoidPolygon(coords, bufferKm = 0.3) {
+        const step = Math.max(1, Math.floor(coords.length / 150));
+        const polygons = [];
+        for (let i = 0; i < coords.length; i += step) {
+            polygons.push(makeAvoidCircle(coords[i][0], coords[i][1], bufferKm).coordinates);
+        }
+        if (polygons.length === 0) return null;
+        return { type: 'MultiPolygon', coordinates: polygons };
+    }
+
+    async function fetchLeg(key, profile, coordsArray, extraOpts) {
+        const opts = { ...getAvoidOptions(), ...extraOpts };
+        const body = { coordinates: coordsArray, elevation: true, extra_info: ['steepness'], geometry_simplify: false, options: opts };
+        const res = await fetch(`${ORS_BASE}/v2/directions/${profile}/geojson`, {
+            method: 'POST',
+            headers: { 'Authorization': key, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+            const errText = await res.text().catch(() => res.status);
+            console.warn('fetchLeg failed', res.status, errText.slice(0, 200), 'coords:', coordsArray.length);
+            return null;
+        }
+        const data = await res.json();
+        if (!data.features || !data.features[0]) return null;
+        return data.features[0];
+    }
+
+    function combineLegs(outFeature, retFeature) {
+        const outCoords = outFeature.geometry.coordinates;
+        const retCoords = retFeature.geometry.coordinates;
+        const outSum   = outFeature.properties.summary;
+        const retSum   = retFeature.properties.summary;
+
+        const allCoords = [...outCoords, ...retCoords.slice(1)];
+        const curviness = calculateCurviness(allCoords);
+
+        let ascent = 0, descent = 0;
+        if (allCoords[0].length >= 3) {
+            for (let i = 1; i < allCoords.length; i++) {
+                const diff = allCoords[i][2] - allCoords[i-1][2];
+                if (diff > 0) ascent += diff; else descent += Math.abs(diff);
+            }
+        }
+        return {
+            name: 'Rundkurs via Zwischenziele',
+            coords: allCoords,
+            latLngs: allCoords.map(c => [c[1], c[0]]),
+            distance: outSum.distance + retSum.distance,
+            duration: outSum.duration + retSum.duration,
+            curviness,
+            ascent: Math.round(ascent),
+            descent: Math.round(descent),
+            maxElev: 0, minElev: 0,
+            geojson: null
+        };
+    }
+
+    // Einfache Via-Route ohne Schleifen – Fallback wenn Bogenpunkte scheitern
+    async function fetchRoundTripViaSimple(key, profile, start, distance, viaPoints, variantIndex) {
+        const lastVia = viaPoints[viaPoints.length - 1];
+        const kmPerLat = 111.0;
+        const kmPerLon = 111.0 * Math.cos(start[1] * Math.PI / 180);
+
+        // Richtungsvektor Start -> LastVia, senkrecht dazu
+        const dxKm = (lastVia[0] - start[0]) * kmPerLon;
+        const dyKm = (lastVia[1] - start[1]) * kmPerLat;
+        const lenKm = Math.sqrt(dxKm * dxKm + dyKm * dyKm) || 1;
+        const pxKm = -dyKm / lenKm;
+        const pyKm =  dxKm / lenKm;
+
+        // Kleiner seitlicher Versatz auf Rückweg um andere Straßen zu nehmen
+        const offsets = [0, 0.15, -0.15, 0.30, -0.30, 0.08];
+        const offsetKm = (offsets[variantIndex % offsets.length] || 0) * lenKm;
+
+        const midRetLng = start[0] + (dxKm * 0.5 + pxKm * offsetKm) / kmPerLon;
+        const midRetLat = start[1] + (dyKm * 0.5 + pyKm * offsetKm) / kmPerLat;
+
+        const outFeature = await fetchLeg(key, profile, [start, ...viaPoints], {});
+        if (!outFeature) return null;
+
+        const retCoords = offsetKm !== 0
+            ? [lastVia, [midRetLng, midRetLat], start]
+            : [lastVia, start];
+        const retFeature = await fetchLeg(key, profile, retCoords, {});
+        if (!retFeature) return null;
+
+        return combineLegs(outFeature, retFeature);
+    }
+
+    // Hilfsfunktion: Punkt in km-Richtung versetzen
+    function offsetPointKm(origin, dxKm, dyKm) {
+        const kmPerLat = 111.0;
+        const kmPerLon = 111.0 * Math.cos(origin[1] * Math.PI / 180);
+        return [origin[0] + dxKm / kmPerLon, origin[1] + dyKm / kmPerLat];
+    }
+
+    async function fetchRoundTrip(key, profile, start, distance, seed, viaPoints, variantIndex) {
+        if (viaPoints && viaPoints.length > 0) {
+            const desiredKm = distance / 1000;
+            const lastVia = viaPoints[viaPoints.length - 1];
+            const vi = variantIndex !== undefined ? variantIndex : seed;
+            const side = (vi % 2 === 0) ? 1 : -1;
+
+            const kmPerLat = 111.0;
+            const kmPerLon = 111.0 * Math.cos(start[1] * Math.PI / 180);
+
+            // Luftlinie aller Punkte
+            const allPts = [start, ...viaPoints, start];
+            let airlineKm = 0;
+            for (let i = 0; i < allPts.length - 1; i++)
+                airlineKm += haversine(allPts[i][1], allPts[i][0], allPts[i+1][1], allPts[i+1][0]) / 1000;
+            const directKm = airlineKm * 1.35;
+            const extraKm = Math.max(0, desiredKm - directKm);
+
+            // Richtungsvektor Start -> LastVia in km-Raum
+            const dxKm = (lastVia[0] - start[0]) * kmPerLon;
+            const dyKm = (lastVia[1] - start[1]) * kmPerLat;
+            const lenKm = Math.sqrt(dxKm * dxKm + dyKm * dyKm) || 1;
+            const pxKm = -dyKm / lenKm;  // Senkrecht-Einheitsvektor
+            const pyKm =  dxKm / lenKm;
+
+            let outCoords = [start, ...viaPoints];
+            let retCoords = [lastVia, start];
+
+            if (extraKm > 5) {
+                // Extra auf Hin- (60%) und Rückweg (40%) aufteilen
+                const outExtraKm = extraKm * 0.6;
+                const retExtraKm = extraKm * 0.4;
+
+                // Anzahl Zwischenpunkte je nach Kurvigkeit
+                const numOut = curvinessLevel === 3 ? 5 : curvinessLevel === 2 ? 4 : 3;
+                const numRet = curvinessLevel === 3 ? 4 : 3;
+
+                // Hinweg: Bogenpunkte seitlich von der Start->Via Achse
+                const outLoop = [];
+                for (let i = 1; i <= numOut; i++) {
+                    const t = i / (numOut + 1);
+                    // Sinusbogen: seitliche Auslenkung
+                    const perpKm = Math.sin(t * Math.PI) * (outExtraKm / Math.PI) * side;
+                    outLoop.push(offsetPointKm(start, dxKm * t + pxKm * perpKm, dyKm * t + pyKm * perpKm));
+                }
+
+                // Rückweg: Bogenpunkte zur anderen Seite, Via -> Start
+                const rdxKm = (start[0] - lastVia[0]) * kmPerLon;
+                const rdyKm = (start[1] - lastVia[1]) * kmPerLat;
+                const retLoop = [];
+                for (let i = 1; i <= numRet; i++) {
+                    const t = i / (numRet + 1);
+                    const perpKm = Math.sin(t * Math.PI) * (retExtraKm / Math.PI) * (-side);
+                    retLoop.push(offsetPointKm(lastVia, rdxKm * t + pxKm * perpKm, rdyKm * t + pyKm * perpKm));
+                }
+
+                outCoords = [start, ...outLoop, ...viaPoints];
+                retCoords = [lastVia, ...retLoop, start];
+            }
+
+            const outFeature = await fetchLeg(key, profile, outCoords, {});
+            if (!outFeature) return null;
+
+            // avoid_polygons weglassen – kann zu groß werden und ORS ablehnen
+            const retFeature = await fetchLeg(key, profile, retCoords, {});
+            if (!retFeature) return null;
+
+            return combineLegs(outFeature, retFeature);
+        }
+
+
+        const opts = getAvoidOptions();
+        opts.round_trip = {
+            length: distance,
+            points: curvinessLevel === 3 ? 8 : curvinessLevel === 2 ? 5 : 3,
+            seed: seed
+        };
+
+        const body = {
+            coordinates: [start],
+            elevation: true,
+            extra_info: ['steepness'],
+            geometry_simplify: false,
+            options: opts
+        };
+
+        const res = await fetch(`${ORS_BASE}/v2/directions/${profile}/geojson`, {
+            method: 'POST',
+            headers: { 'Authorization': key, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (!res.ok) return null;
+        const data = await res.json();
+        return processRoute(data, `Rundkurs #${seed}`);
+    }
+
+    async function fetchManualRoundTrip(key, profile, start, waypoints, angle) {
+        const midIdx = Math.ceil(waypoints.length / 2);
+        const firstHalf  = waypoints.slice(0, midIdx);      
+        const secondHalf = waypoints.slice(midIdx);          
+        const turnaround = firstHalf[firstHalf.length - 1];
+
+        const outFeature = await fetchLeg(key, profile, [start, ...firstHalf], {});
+        if (!outFeature) return null;
+
+        const retCoords = secondHalf.length > 0
+            ? [turnaround, ...secondHalf, start]
+            : [turnaround, start];
+        const outAvoid = buildRouteAvoidPolygon(outFeature.geometry.coordinates);
+        const retOpts = outAvoid ? { avoid_polygons: outAvoid } : {};
+        const retFeature = await fetchLeg(key, profile, retCoords, retOpts);
+        if (!retFeature) return null;
+
+        const dir = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'][Math.round(angle / 45) % 8];
+        const result = combineLegs(outFeature, retFeature);
+        result.name = `Rundkurs Richtung ${dir}`;
+        return result;
+    }
+
+    // ============== GraphHopper Round Trip ==============
+    async function fetchGHRoundTrip(key, profile, start, distanceM, seed, heading) {
+        // Free-Plan: kein ch.disable, kein heading (flexible mode nicht verfügbar)
+        const url = `${GH_BASE}?key=${key}&profile=${profile}&point=${start[1]},${start[0]}&algorithm=round_trip&round_trip.distance=${distanceM}&round_trip.seed=${seed}&elevation=true&points_encoded=false`;
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            if (!res.ok) {
+                console.warn('GH API Fehler:', data.message || res.status);
+                if (res.status === 429) return 'RATE_LIMIT';
+                return null;
+            }
+            if (!data.paths || data.paths.length === 0) {
+                console.warn('GH: keine paths im response', data);
+                return null;
+            }
+
+            const path = data.paths[0];
+            const coords = path.points.coordinates; // [lon, lat, ele?]
+            if (!coords || coords.length < 2) return null;
+
+            const latLngs = coords.map(c => [c[1], c[0]]);
+            const curviness = calculateCurviness(coords);
+
+            let ascent = 0, descent = 0;
+            if (coords[0].length >= 3) {
+                for (let i = 1; i < coords.length; i++) {
+                    const diff = coords[i][2] - coords[i-1][2];
+                    if (diff > 0) ascent += diff; else descent += Math.abs(diff);
+                }
+            }
+
+            const dirs = ['N','NO','O','SO','S','SW','W','NW'];
+            const dir = dirs[Math.round(heading / 45) % 8];
+
+            return {
+                name: `Rundkurs Richtung ${dir}`,
+                coords,
+                latLngs,
+                distance: path.distance,
+                duration: path.time / 1000,
+                curviness,
+                ascent: Math.round(ascent),
+                descent: Math.round(descent),
+                maxElev: 0,
+                minElev: 0,
+                geojson: null
+            };
+        } catch(e) {
+            console.error('GH fetch error:', e);
+            return null;
+        }
+    }
+
+    // ============== Route Processing ==============
+    function processRoute(geojson, name) {
+        if (!geojson.features || geojson.features.length === 0) return null;
+
+        const feature = geojson.features[0];
+        const coords = feature.geometry.coordinates;
+        const props = feature.properties;
+        const summary = props.summary;
+
+        const curviness = calculateCurviness(coords);
+
+        let ascent = 0, descent = 0, maxElev = -Infinity, minElev = Infinity;
+        if (coords[0].length >= 3) {
+            for (let i = 1; i < coords.length; i++) {
+                const diff = coords[i][2] - coords[i - 1][2];
+                if (diff > 0) ascent += diff;
+                else descent += Math.abs(diff);
+                if (coords[i][2] > maxElev) maxElev = coords[i][2];
+                if (coords[i][2] < minElev) minElev = coords[i][2];
+            }
+        }
+
+        const latLngs = coords.map(c => [c[1], c[0]]);
+
+        return {
+            name,
+            coords,
+            latLngs,
+            distance: summary.distance,
+            duration: summary.duration,
+            curviness,
+            ascent: Math.round(ascent),
+            descent: Math.round(descent),
+            maxElev: Math.round(maxElev),
+            minElev: Math.round(minElev),
+            geojson: feature
+        };
+    }
+
+    function calculateCurviness(coords) {
+        if (coords.length < 3) return 0;
+
+        let totalAngleChange = 0;
+        let totalDistance = 0;
+
+        for (let i = 1; i < coords.length - 1; i++) {
+            const prev = coords[i - 1];
+            const curr = coords[i];
+            const next = coords[i + 1];
+
+            const b1 = bearing(prev[1], prev[0], curr[1], curr[0]);
+            const b2 = bearing(curr[1], curr[0], next[1], next[0]);
+
+            let angleDiff = Math.abs(b2 - b1);
+            if (angleDiff > 180) angleDiff = 360 - angleDiff;
+
+            totalAngleChange += angleDiff;
+            totalDistance += haversine(prev[1], prev[0], curr[1], curr[0]);
+        }
+
+        const distKm = totalDistance / 1000;
+        if (distKm === 0) return 0;
+        return Math.round(totalAngleChange / distKm);
+    }
+
+    function detectZipfelKm(coords) {
+        if (coords.length < 4) return 0;
+        const GRID = 0.003; 
+        const BUCKETS = 12; 
+        const seen = new Map();
+        let zipfelM = 0;
+        for (let i = 0; i < coords.length - 1; i++) {
+            const ax = coords[i][0],   ay = coords[i][1];
+            const bx = coords[i+1][0], by = coords[i+1][1];
+            const cellX = Math.round((ax + bx) / 2 / GRID);
+            const cellY = Math.round((ay + by) / 2 / GRID);
+            const bkt  = Math.round(bearing(ay, ax, by, bx) / (360 / BUCKETS)) % BUCKETS;
+            const rBkt = (bkt + BUCKETS / 2) % BUCKETS;
+            const revKey = `${cellX},${cellY},${rBkt}`;
+            if (seen.has(revKey)) {
+                zipfelM += haversine(ay, ax, by, bx);
+            } else {
+                seen.set(`${cellX},${cellY},${bkt}`, true);
+            }
+        }
+        return zipfelM / 1000;
+    }
+
+    function bearing(lat1, lon1, lat2, lon2) {
+        const toRad = Math.PI / 180;
+        const dLon = (lon2 - lon1) * toRad;
+        const y = Math.sin(dLon) * Math.cos(lat2 * toRad);
+        const x = Math.cos(lat1 * toRad) * Math.sin(lat2 * toRad) - Math.sin(lat1 * toRad) * Math.cos(lat2 * toRad) * Math.cos(dLon);
+        return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    }
+
+    function haversine(lat1, lon1, lat2, lon2) {
+        const R = 6371000;
+        const toRad = Math.PI / 180;
+        const dLat = (lat2 - lat1) * toRad;
+        const dLon = (lon2 - lon1) * toRad;
+        const a = Math.sin(dLat/2)**2 + Math.cos(lat1*toRad) * Math.cos(lat2*toRad) * Math.sin(dLon/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    // ============== Display Results ==============
+    function displayResults() {
+        if (foundRoutes.length === 0) {
+            const container = document.getElementById('routeCards');
+            const elevationEnabled = currentMode === 'bike' && document.getElementById('elevationEnabled').checked;
+            const elevationMsg = elevationEnabled
+                ? `Keine Routen unter ${document.getElementById('maxElevation').value} hm gefunden – Höhenlimit erhöhen oder "Höhenmeter begrenzen" deaktivieren.`
+                : 'Keine Routen gefunden – Distanz zu groß oder Rate-Limit erreicht. Kurz warten und nochmal versuchen.';
+            container.innerHTML = `<p style="color:var(--muted);font-size:0.85em;padding:8px 0">${elevationMsg}</p>`;
+            document.getElementById('results').style.display = 'block';
+            return;
+        }
+
+        const container = document.getElementById('routeCards');
+        container.innerHTML = '';
+        document.getElementById('results').style.display = 'block';
+
+        const desiredDist = foundRoutes._desiredDistance;
+        if (desiredDist && foundRoutes.length > 0) {
+            const bestDist = foundRoutes[0].distance;
+            const deviation = Math.abs(bestDist - desiredDist) / desiredDist;
+            if (deviation > 0.10) {
+                const actualKm = (bestDist / 1000).toFixed(0);
+                const desiredKm = (desiredDist / 1000).toFixed(0);
+                const warning = document.createElement('div');
+                warning.className = 'distance-warning';
+                warning.textContent = `Zwischenziel zu ${bestDist < desiredDist ? 'nah' : 'weit'} fuer gewuenschte Distanz \u2013 Routen weichen ab (~${actualKm} km statt ${desiredKm} km)`;
+                container.appendChild(warning);
+            }
+        }
+
+        if (usedFallback) {
+            const info = document.createElement('div');
+            info.style.cssText = `
+                background: rgba(240,106,28,0.08);
+                border: 1px solid rgba(240,106,28,0.3);
+                border-radius: var(--r-sm);
+                padding: 9px 13px;
+                margin-bottom: 6px;
+                font-size: 0.78em;
+                color: var(--accent);
+                display: flex;
+                align-items: flex-start;
+                gap: 8px;
+            `;
+            info.innerHTML = `<span style="flex-shrink:0;font-size:1.1em;">⚠️</span><span style="flex:1;">GraphHopper-Kontingent erschöpft – Routen wurden intern berechnet. Qualität kann bei langen Strecken eingeschränkt sein.</span><span onclick="this.closest('div').remove()" style="flex-shrink:0;cursor:pointer;opacity:0.5;font-size:1.1em;padding-left:6px;">✕</span>`;
+            container.appendChild(info);
+            setTimeout(() => { if (info.parentNode) info.remove(); }, 5000);
+        }
+
+        foundRoutes.forEach((route, idx) => {
+            const layer = L.polyline(route.latLngs, {
+                color: COLORS[idx % COLORS.length],
+                weight: idx === 0 ? 5 : 4,
+                opacity: idx === 0 ? 0.9 : 0.6
+            }).addTo(map);
+            routeLayers.push(layer);
+
+            const curvinessLabel = route.curviness > 500 ? 'Sehr kurvig' :
+                                   route.curviness > 300 ? 'Kurvig' :
+                                   route.curviness > 150 ? 'Moderat' : 'Gerade';
+
+            const card = document.createElement('div');
+            card.className = `route-card ${idx === 0 ? 'active' : ''}`;
+            card.innerHTML = `
+                <div class="route-header">
+                    <span class="route-name" style="color:${COLORS[idx % COLORS.length]}">Route ${idx + 1}</span>
+                    <span class="curviness-badge">${curvinessLabel} (${route.curviness}°/km)</span>
+                </div>
+                <div class="route-stats">
+                    <span>${currentMode === 'moto' ? '🏍' : '🚲'} ${(route.distance / 1000).toFixed(1)} km</span>
+                    <span>⏱ ${formatDuration(route.duration)}</span>
+                    <span>▲ ${route.ascent} hm</span>
+                    ${routeType === 'ab' ? `<span>▼ ${route.descent} hm</span>` : ''}
+                </div>
+                <div class="route-actions">
+                    <button class="btn-secondary" onclick="exportGPX(${idx})">GPX Export</button>
+                    <button class="btn-secondary" onclick="openInGoogleMaps(${idx})">Google Maps</button>
+                    <button class="btn-secondary" onclick="openInWaze(${idx})">Waze</button>
+                </div>
+            `;
+            card.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') return;
+                highlightRoute(idx);
+            });
+            container.appendChild(card);
+        });
+
+        if (foundRoutes.length > 0) {
+            map.fitBounds(routeLayers[0].getBounds().pad(0.1));
+        }
+    }
+
+    function highlightRoute(idx) {
+        document.querySelectorAll('.route-card').forEach((c, i) => c.classList.toggle('active', i === idx));
+        routeLayers.forEach((l, i) => {
+            l.setStyle({ weight: i === idx ? 6 : 3, opacity: i === idx ? 0.9 : 0.4 });
+            if (i === idx) l.bringToFront();
+        });
+        map.fitBounds(routeLayers[idx].getBounds().pad(0.1));
+    }
+
+    function clearRoutes() {
+        routeLayers.forEach(l => map.removeLayer(l));
+        routeLayers = [];
+        foundRoutes = [];
+        document.getElementById('routeCards').innerHTML = '';
+        document.getElementById('results').style.display = 'none';
+    }
+
+    function formatDuration(seconds) {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        return h > 0 ? `${h}h ${m}min` : `${m}min`;
+    }
+
+    // ============== Export / Open ==============
+    function exportGPX(idx) {
+        const route = foundRoutes[idx];
+        let gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="SoulRide"
+    xmlns="http://www.topografix.com/GPX/1/1">
+    <metadata>
+        <name>${route.name} - ${(route.distance/1000).toFixed(1)}km - ${route.curviness} deg/km</name>
+    </metadata>
+    <trk>
+        <name>${route.name}</name>
+        <trkseg>
+`;
+        route.coords.forEach(c => {
+            const ele = c.length >= 3 ? `<ele>${c[2].toFixed(1)}</ele>` : '';
+            gpx += `            <trkpt lat="${c[1].toFixed(6)}" lon="${c[0].toFixed(6)}">${ele}</trkpt>\n`;
+        });
+        gpx += `        </trkseg>
+    </trk>
+</gpx>`;
+
+        const blob = new Blob([gpx], {type: 'application/gpx+xml'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `soulride_route_${idx + 1}.gpx`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function openInGoogleMaps(idx) {
+        const route = foundRoutes[idx];
+        const coords = route.coords;
+        const start = `${coords[0][1]},${coords[0][0]}`;
+        const end = `${coords[coords.length-1][1]},${coords[coords.length-1][0]}`;
+
+        const waypoints = [];
+        const step = Math.floor(coords.length / 9);
+        for (let i = step; i < coords.length - step; i += step) {
+            if (waypoints.length >= 8) break;
+            waypoints.push(`${coords[i][1]},${coords[i][0]}`);
+        }
+
+        const waypointStr = waypoints.length > 0 ? `&waypoints=${waypoints.join('|')}` : '';
+        const url = `https://www.google.com/maps/dir/?api=1&origin=${start}&destination=${end}${waypointStr}`;
+        window.open(url, '_blank');
+    }
+
+    function openInWaze(idx) {
+        const route = foundRoutes[idx];
+        const coords = route.coords;
+        const end = coords[coords.length - 1];
+        const url = `https://waze.com/ul?ll=${end[1]},${end[0]}&navigate=yes`;
+        window.open(url, '_blank');
+    }
+    </script>
+</body>
+</html>
