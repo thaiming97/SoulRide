@@ -1032,8 +1032,10 @@
     </div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
     // Remove splash after animation completes
-    document.getElementById('splash').addEventListener('animationend', function() {
-        this.style.display = 'none';
+    document.getElementById('splash').addEventListener('animationend', function(e) {
+        if (e.animationName === 'splashExit') {
+            this.style.display = 'none';
+        }
     });
 
     // ── Bottom sheet (mobile) ──
