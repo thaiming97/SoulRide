@@ -117,7 +117,7 @@
                 radial-gradient(ellipse 90% 70% at 80% 10%, var(--splash-grad-1) 0%, transparent 55%),
                 radial-gradient(ellipse 80% 60% at 5% 90%, var(--splash-grad-2) 0%, transparent 55%),
                 var(--splash-linear);
-            animation: splashExit 0.9s cubic-bezier(0.76, 0, 0.24, 1) 2.0s forwards;
+            animation: splashExit 0.9s cubic-bezier(0.76, 0, 0.24, 1) 4.0s forwards;
         }
         /* Sun orb */
         #splash::before {
@@ -942,7 +942,7 @@
                             <input type="text" id="startInput" placeholder="Startpunkt..."
                                    oninput="geocodeDebounce('start')" onfocus="showSuggestions('start')">
                             <div class="suggestions" id="startSuggestions"></div>
-                            <button class="loc-btn" onclick="useMyLocation()" title="Mein Standort">📍</button>
+                            <button class="loc-btn" onclick="useMyLocation(this)" title="Mein Standort">📍</button>
                         </div>
                         <div id="destGroup">
                             <div class="input-card-divider"></div>
@@ -1308,8 +1308,7 @@
     }
 
     // ============== GPS Location ==============
-    function useMyLocation() {
-        const btn = document.querySelector('#location-section .btn-secondary');
+    function useMyLocation(btn) {
         btn.textContent = '...';
 
         if (navigator.geolocation) {
