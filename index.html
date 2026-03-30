@@ -6,76 +6,82 @@
     <title>SoulRide – Find Your Route</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garant:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         /* ─── Variables (Default / Light Mode) ──────────────── */
         :root {
-            --accent:      #f06a1c;
-            --accent-dim:  rgba(240, 106, 28, 0.12);
-            --accent-glow: rgba(240, 106, 28, 0.28);
-            --text:        #18182a;
-            --text-soft:   #3a3a52;
-            --muted:       rgba(60, 60, 95, 0.5);
-            --glass:       rgba(250, 250, 252, 0.97);
-            --glass-heavy: rgba(255, 255, 255, 1.0);
-            --card:        rgba(255, 255, 255, 0.85);
-            --card-hover:  rgba(255, 255, 255, 0.98);
-            --line:        rgba(0, 0, 0, 0.07);
-            --line-soft:   rgba(0, 0, 0, 0.1);
+            --accent:          #C4956A;
+            --accent-dim:      rgba(196, 149, 106, 0.12);
+            --accent-glow:     rgba(196, 149, 106, 0.28);
+            --accent-secondary: #A5C9B3;
+            --accent-sec-dim:  rgba(165, 201, 179, 0.12);
+            --accent-sec-glow: rgba(165, 201, 179, 0.22);
+            --text:        #2C2418;
+            --text-soft:   #5C4E3E;
+            --muted:       rgba(92, 78, 62, 0.5);
+            --glass:       rgba(245, 240, 232, 0.97);
+            --glass-heavy: rgba(250, 245, 238, 1.0);
+            --card:        rgba(250, 245, 238, 0.85);
+            --card-hover:  rgba(252, 248, 242, 0.98);
+            --line:        rgba(44, 36, 24, 0.07);
+            --line-soft:   rgba(44, 36, 24, 0.1);
             --r-sm:        12px;
             --r-md:        18px;
             --r-lg:        24px;
-            
+
             /* Light mode specific non-variable colors */
-            --bg-gradient-1: rgba(255, 200, 120, 0.22);
-            --bg-gradient-2: rgba(180, 225, 255, 0.35);
-            --bg-gradient-3: rgba(255, 245, 235, 0.5);
-            --bg-linear: linear-gradient(145deg, #dceefb 0%, #f5f7fa 40%, #fff8f2 75%, #fde8cf 100%);
-            
-            --splash-grad-1: rgba(180, 225, 255, 0.5);
-            --splash-grad-2: rgba(255, 200, 110, 0.3);
-            --splash-linear: linear-gradient(145deg, #d8edfb 0%, #f4f6fa 45%, #fff6ee 80%, #fde5c8 100%);
-            
-            --sidebar-border: rgba(255, 255, 255, 0.9);
-            --logo-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, transparent 100%);
-            --suggestion-bg: rgba(255, 255, 255, 0.97);
-            --tab-bg: rgba(118, 118, 128, 0.12);
-            --tab-hover-bg: rgba(118, 118, 128, 0.06);
-            --tab-active-bg: rgba(255,255,255,0.96);
-            --route-card-border: rgba(255, 255, 255, 0.82);
+            --bg-gradient-1: rgba(181, 208, 190, 0.28);   /* sage green */
+            --bg-gradient-2: rgba(210, 185, 155, 0.22);   /* warm sand */
+            --bg-gradient-3: rgba(245, 235, 220, 0.5);    /* cream */
+            --bg-linear: linear-gradient(145deg, #EDF2EA 0%, #F5F0E8 40%, #FAF5EE 75%, #EDE7DE 100%);
+
+            --splash-grad-1: rgba(181, 208, 190, 0.35);   /* sage */
+            --splash-grad-2: rgba(196, 149, 106, 0.2);    /* caramel */
+            --splash-linear: linear-gradient(145deg, #ECF2EA 0%, #F5F0E8 45%, #FAF5EE 80%, #EDE7DE 100%);
+
+            --sidebar-border: rgba(235, 225, 210, 0.9);
+            --logo-bg: linear-gradient(180deg, rgba(250, 245, 238, 0.4) 0%, transparent 100%);
+            --suggestion-bg: rgba(250, 245, 238, 0.97);
+            --tab-bg: rgba(92, 78, 62, 0.1);
+            --tab-hover-bg: rgba(92, 78, 62, 0.05);
+            --tab-active-bg: rgba(250, 245, 238, 0.96);
+            --route-card-border: rgba(235, 225, 210, 0.82);
         }
 
         /* ─── Variables (Dark Mode) ─────────────────────────── */
         @media (prefers-color-scheme: dark) {
             :root {
-                --accent:      #ff7b33;
-                --text:        #f0f0f5;
-                --text-soft:   #c0c0d0;
-                --muted:       rgba(180, 180, 200, 0.5);
-                --glass:       rgba(20, 20, 30, 0.75);
-                --glass-heavy: rgba(30, 30, 45, 0.9);
-                --card:        rgba(40, 40, 55, 0.6);
-                --card-hover:  rgba(55, 55, 75, 0.8);
-                --line:        rgba(255, 255, 255, 0.08);
-                --line-soft:   rgba(255, 255, 255, 0.12);
+                --accent:          #D4A57A;
+                --accent-secondary: #7BA896;
+                --accent-sec-dim:  rgba(123, 168, 150, 0.12);
+                --accent-sec-glow: rgba(123, 168, 150, 0.22);
+                --text:        #F0E8DE;
+                --text-soft:   #C8B8A4;
+                --muted:       rgba(200, 184, 164, 0.5);
+                --glass:       rgba(30, 26, 22, 0.75);
+                --glass-heavy: rgba(38, 34, 28, 0.9);
+                --card:        rgba(45, 40, 32, 0.6);
+                --card-hover:  rgba(58, 52, 42, 0.8);
+                --line:        rgba(240, 232, 222, 0.08);
+                --line-soft:   rgba(240, 232, 222, 0.12);
 
-                --bg-gradient-1: rgba(240, 106, 28, 0.1);
-                --bg-gradient-2: rgba(60, 100, 150, 0.15);
-                --bg-gradient-3: rgba(20, 20, 30, 0.5);
-                --bg-linear: linear-gradient(145deg, #101018 0%, #181824 40%, #1a1a28 75%, #221814 100%);
+                --bg-gradient-1: rgba(90, 120, 95, 0.12);    /* dark sage */
+                --bg-gradient-2: rgba(196, 149, 106, 0.1);   /* caramel */
+                --bg-gradient-3: rgba(30, 26, 22, 0.5);
+                --bg-linear: linear-gradient(145deg, #141A12 0%, #201C16 40%, #1E1A14 75%, #161E14 100%);
 
-                --splash-grad-1: rgba(60, 100, 150, 0.2);
-                --splash-grad-2: rgba(240, 106, 28, 0.15);
-                --splash-linear: linear-gradient(145deg, #12121a 0%, #181824 45%, #1c1c28 80%, #241a14 100%);
-                
-                --sidebar-border: rgba(255, 255, 255, 0.05);
-                --logo-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
-                --suggestion-bg: rgba(35, 35, 50, 0.97);
-                --tab-bg: rgba(118, 118, 128, 0.24);
-                --tab-hover-bg: rgba(255, 255, 255, 0.04);
-                --tab-active-bg: rgba(58, 58, 78, 0.96);
-                --route-card-border: rgba(255, 255, 255, 0.05);
+                --splash-grad-1: rgba(90, 120, 95, 0.15);    /* dark sage */
+                --splash-grad-2: rgba(196, 149, 106, 0.12);
+                --splash-linear: linear-gradient(145deg, #141A12 0%, #201C16 45%, #1E1A14 80%, #161E14 100%);
+
+                --sidebar-border: rgba(240, 232, 222, 0.05);
+                --logo-bg: linear-gradient(180deg, rgba(240, 232, 222, 0.03) 0%, transparent 100%);
+                --suggestion-bg: rgba(38, 34, 28, 0.97);
+                --tab-bg: rgba(92, 78, 62, 0.24);
+                --tab-hover-bg: rgba(240, 232, 222, 0.04);
+                --tab-active-bg: rgba(52, 46, 38, 0.96);
+                --route-card-border: rgba(240, 232, 222, 0.05);
             }
             
             /* Specific overrides for Dark Mode shadows */
@@ -117,7 +123,7 @@
                 radial-gradient(ellipse 90% 70% at 80% 10%, var(--splash-grad-1) 0%, transparent 55%),
                 radial-gradient(ellipse 80% 60% at 5% 90%, var(--splash-grad-2) 0%, transparent 55%),
                 var(--splash-linear);
-            animation: splashExit 0.9s cubic-bezier(0.76, 0, 0.24, 1) 2.0s forwards;
+            animation: splashExit 0.9s cubic-bezier(0.76, 0, 0.24, 1) 2.5s forwards;
         }
         /* Sun orb */
         #splash::before {
@@ -128,7 +134,7 @@
             top: -200px;
             right: -100px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(255, 210, 100, 0.5) 0%, rgba(255, 160, 50, 0.18) 45%, transparent 68%);
+            background: radial-gradient(circle, rgba(220, 195, 165, 0.45) 0%, rgba(196, 149, 106, 0.15) 45%, transparent 68%);
             animation: orbPulse 3.2s ease-in-out infinite alternate;
         }
         @keyframes orbPulse {
@@ -140,7 +146,7 @@
             position: absolute;
             bottom: 0; left: 0; right: 0;
             height: 30%;
-            background: linear-gradient(0deg, rgba(240, 106, 28, 0.06) 0%, transparent 100%);
+            background: linear-gradient(0deg, rgba(196, 149, 106, 0.08) 0%, transparent 100%);
             pointer-events: none;
         }
         @keyframes splashExit {
@@ -156,7 +162,7 @@
         }
 
         .splash-eyebrow {
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-size: 0.58rem;
             font-weight: 500;
             letter-spacing: 0.6em;
@@ -168,7 +174,7 @@
         }
 
         .splash-logo {
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-size: clamp(2.6rem, 13vw, 13rem);
             font-weight: 700;
             letter-spacing: 0.08em;
@@ -201,7 +207,7 @@
 
         .splash-rule {
             height: 1.5px;
-            background: linear-gradient(90deg, transparent, var(--accent), rgba(240, 106, 28, 0.3), transparent);
+            background: linear-gradient(90deg, transparent, var(--accent), rgba(196, 149, 106, 0.35), transparent);
             margin: 28px auto;
             width: 0;
             animation: ruleExpand 0.5s ease 0.48s forwards;
@@ -212,7 +218,7 @@
         }
 
         .splash-tagline {
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-size: 0.64rem;
             letter-spacing: 0.55em;
             text-transform: uppercase;
@@ -220,27 +226,65 @@
             opacity: 0;
             animation: fadeUp 0.4s ease 0.62s forwards;
         }
-        .splash-dots {
-            margin-top: 56px;
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            opacity: 0;
-            animation: fadeUp 0.35s ease 0.8s forwards;
+        /* ─── Motorcycle Loading Animation ──────────────── */
+        .splash-moto-track {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 90px;
+            overflow: hidden;
+            /* visible immediately so moto is seen right away */
+            opacity: 1;
         }
-        .splash-dots span {
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: rgba(60, 60, 95, 0.15);
-            animation: dotPulse 1.4s ease-in-out infinite;
+        .splash-moto-road {
+            position: absolute;
+            bottom: 24px;
+            left: 0;
+            right: 0;
+            height: 1.5px;
+            background: linear-gradient(90deg, transparent 0%, var(--accent) 15%, var(--accent) 85%, transparent 100%);
+            opacity: 0.35;
         }
-        .splash-dots span:nth-child(1) { animation-delay: 0s; }
-        .splash-dots span:nth-child(2) { animation-delay: 0.2s; background: var(--accent); }
-        .splash-dots span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes dotPulse {
-            0%, 100% { opacity: 0.25; transform: scale(1); }
-            50%       { opacity: 1;    transform: scale(1.5); }
+        .splash-moto-road::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(90deg, transparent 0px, transparent 14px, rgba(196, 149, 106, 0.3) 14px, rgba(196, 149, 106, 0.3) 22px);
+            animation: roadDash 0.6s linear infinite;
+        }
+        @keyframes roadDash {
+            from { transform: translateX(0); }
+            to   { transform: translateX(22px); }
+        }
+        .splash-moto {
+            position: absolute;
+            bottom: 28px;
+            /* start from off-screen left, ride across the full screen */
+            animation: motoRide 2.0s linear 0.3s forwards;
+            left: -80px;
+        }
+        .splash-moto svg {
+            width: 68px;
+            height: 36px;
+            color: var(--accent);       /* drives currentColor for strokes */
+            fill: none;
+            filter: drop-shadow(0 3px 8px rgba(196, 149, 106, 0.35));
+        }
+        @keyframes motoRide {
+            0%   { left: -80px;  }
+            100% { left: calc(100% + 80px); }
+        }
+        /* Wheel spin — use SVG-space transform-origin via style attribute on elements */
+        .splash-moto .wheel-spin {
+            animation: wheelSpin 0.35s linear infinite;
+        }
+        @keyframes wheelSpin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
         }
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(8px); }
@@ -277,7 +321,7 @@
             position: absolute;
             top: 0; left: 0; right: 0;
             height: 3px;
-            background: linear-gradient(90deg, var(--accent) 0%, rgba(240, 106, 28, 0.4) 60%, transparent 100%);
+            background: linear-gradient(90deg, var(--accent) 0%, rgba(196, 149, 106, 0.4) 60%, transparent 100%);
             z-index: 2;
         }
 
@@ -290,10 +334,10 @@
             flex-shrink: 0;
             background: var(--logo-bg);
         }
-        .logo-bar:hover { background: rgba(240, 106, 28, 0.04); }
+        .logo-bar:hover { background: rgba(196, 149, 106, 0.04); }
 
         .logo-wordmark {
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-size: 2.1rem;
             font-weight: 700;
             letter-spacing: 0.12em;
@@ -304,7 +348,7 @@
         .logo-wordmark .accent-part { color: var(--accent); }
 
         .logo-sub {
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-size: 0.54rem;
             letter-spacing: 0.48em;
             text-transform: uppercase;
@@ -315,7 +359,7 @@
         .logo-stripe {
             margin-top: 14px;
             height: 1.5px;
-            background: linear-gradient(90deg, var(--accent) 0%, rgba(240, 106, 28, 0.2) 60%, transparent 100%);
+            background: linear-gradient(90deg, var(--accent) 0%, rgba(196, 149, 106, 0.2) 60%, transparent 100%);
             width: 48%;
         }
 
@@ -329,10 +373,10 @@
             flex-direction: column;
             gap: 18px;
             scrollbar-width: thin;
-            scrollbar-color: rgba(240, 106, 28, 0.2) transparent;
+            scrollbar-color: rgba(196, 149, 106, 0.2) transparent;
         }
         .sidebar-body::-webkit-scrollbar { width: 3px; }
-        .sidebar-body::-webkit-scrollbar-thumb { background: rgba(240, 106, 28, 0.25); border-radius: 2px; }
+        .sidebar-body::-webkit-scrollbar-thumb { background: rgba(196, 149, 106, 0.25); border-radius: 2px; }
 
         /* ─── Sections ───────────────────────────────────────── */
         .section {
@@ -363,17 +407,22 @@
         }
         .mode-tab {
             flex: 1;
-            padding: 10px 10px;
-            text-align: center;
+            padding: 9px 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
             border-radius: calc(var(--r-md) - 4px);
             cursor: pointer;
             transition: background 0.22s, color 0.22s, box-shadow 0.22s;
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-size: 0.78em;
             font-weight: 500;
             color: var(--muted);
             letter-spacing: 0.05em;
             text-transform: uppercase;
+            white-space: nowrap;
+            line-height: 1;
         }
         .mode-tab:hover { color: var(--text-soft); background: var(--tab-hover-bg); }
         .mode-tab:active { transform: scale(0.96); transition: transform 0.1s; }
@@ -387,7 +436,7 @@
         /* ─── Labels & Inputs ────────────────────────────────── */
         label {
             display: block;
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-size: 0.59em;
             font-weight: 500;
             color: var(--muted);
@@ -411,9 +460,9 @@
         }
         input[type="text"]:focus,
         input[type="number"]:focus {
-            border-color: rgba(240, 106, 28, 0.6);
+            border-color: var(--accent-secondary);
             background: rgba(255, 255, 255, 0.98);
-            box-shadow: 0 0 0 4px rgba(240, 106, 28, 0.12), 0 1px 3px rgba(0,0,0,0.04);
+            box-shadow: 0 0 0 4px var(--accent-sec-dim), 0 1px 3px rgba(0,0,0,0.04);
             transform: translateZ(0);
         }
         input::placeholder { color: rgba(120, 120, 140, 0.55); }
@@ -461,8 +510,8 @@
         }
         .input-card .input-card-row .loc-btn {
             padding: 7px 9px;
-            background: rgba(240, 106, 28, 0.08);
-            border: 1px solid rgba(240, 106, 28, 0.18);
+            background: rgba(196, 149, 106, 0.08);
+            border: 1px solid rgba(196, 149, 106, 0.18);
             border-radius: 8px;
             font-size: 0.95em;
             flex-shrink: 0;
@@ -509,7 +558,7 @@
         }
         .suggestions .suggestion:last-child { border-bottom: none; }
         .suggestions .suggestion:hover {
-            background: rgba(240, 106, 28, 0.06);
+            background: rgba(196, 149, 106, 0.06);
             color: var(--accent);
         }
 
@@ -525,18 +574,24 @@
             cursor: pointer;
             text-align: center;
             transition: all 0.22s;
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-size: 0.78em;
             letter-spacing: 0.04em;
         }
-        .route-type-btn:hover { background: var(--card-hover); color: var(--text-soft); border-color: rgba(240, 106, 28, 0.3); }
+        .route-type-btn:hover { background: var(--card-hover); color: var(--text-soft); border-color: rgba(196, 149, 106, 0.3); }
         .route-type-btn:active { transform: scale(0.96); transition: transform 0.1s; }
         .route-type-btn.active {
             border-color: var(--accent);
             background: var(--accent);
             color: #fff;
             font-weight: 700;
-            box-shadow: 0 2px 12px rgba(240, 106, 28, 0.3);
+            box-shadow: 0 2px 12px rgba(196, 149, 106, 0.3);
+        }
+        /* Rundkurs (secondary accent) */
+        .route-type-btn[data-type="round"].active {
+            border-color: var(--accent-secondary);
+            background: var(--accent-secondary);
+            box-shadow: 0 2px 12px var(--accent-sec-glow);
         }
 
         /* ─── Curviness Buttons ──────────────────────────────── */
@@ -551,18 +606,18 @@
             cursor: pointer;
             text-align: center;
             transition: all 0.22s;
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-size: 0.74em;
             letter-spacing: 0.04em;
         }
-        .curviness-btn:hover { background: var(--card-hover); color: var(--text-soft); border-color: rgba(240, 106, 28, 0.3); }
+        .curviness-btn:hover { background: var(--card-hover); color: var(--text-soft); border-color: rgba(196, 149, 106, 0.3); }
         .curviness-btn:active { transform: scale(0.95); transition: transform 0.1s; }
         .curviness-btn.active {
             border-color: var(--accent);
             background: var(--accent);
             color: #fff;
             font-weight: 700;
-            box-shadow: 0 2px 12px rgba(240, 106, 28, 0.35);
+            box-shadow: 0 2px 12px rgba(196, 149, 106, 0.35);
         }
         .curviness-btn .icon {
             font-size: 1.35em;
@@ -578,7 +633,7 @@
             color: #fff;
             border: none;
             border-radius: 100px;
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-size: 0.95rem;
             font-weight: 700;
             letter-spacing: 0.08em;
@@ -591,7 +646,7 @@
             transition: transform 0.18s, box-shadow 0.22s, filter 0.18s;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 4px 24px rgba(240, 106, 28, 0.38),
+            box-shadow: 0 4px 24px rgba(196, 149, 106, 0.38),
                         inset 0 1px 0 rgba(255, 255, 255, 0.22);
         }
         .btn-primary span {
@@ -610,10 +665,10 @@
         .btn-primary:hover::before { left: 100%; }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 36px rgba(240, 106, 28, 0.55);
+            box-shadow: 0 8px 36px rgba(196, 149, 106, 0.55);
             filter: brightness(1.07);
         }
-        .btn-primary:active { transform: scale(0.97); box-shadow: 0 2px 12px rgba(240, 106, 28, 0.3); transition: transform 0.1s, box-shadow 0.1s; }
+        .btn-primary:active { transform: scale(0.97); box-shadow: 0 2px 12px rgba(196, 149, 106, 0.3); transition: transform 0.1s, box-shadow 0.1s; }
         .btn-primary:disabled {
             opacity: 0.35;
             cursor: not-allowed;
@@ -635,7 +690,7 @@
             transition: all 0.18s;
             box-shadow: 0 1px 3px rgba(0,0,0,0.06);
         }
-        .btn-secondary:hover { background: var(--card-hover); color: var(--text); border-color: rgba(240, 106, 28, 0.3); }
+        .btn-secondary:hover { background: var(--card-hover); color: var(--text); border-color: rgba(196, 149, 106, 0.3); }
         .btn-secondary:active { transform: scale(0.96); transition: transform 0.1s; }
 
         /* ─── Loading ─────────────────────────────────────────── */
@@ -644,7 +699,7 @@
             text-align: center;
             padding: 22px 0;
             color: var(--muted);
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-size: 0.72em;
             letter-spacing: 0.18em;
             text-transform: uppercase;
@@ -655,8 +710,8 @@
             height: 26px;
             border: 2.5px solid transparent;
             border-top-color: var(--accent);
-            border-right-color: rgba(240, 106, 28, 0.35);
-            border-bottom-color: rgba(240, 106, 28, 0.1);
+            border-right-color: rgba(196, 149, 106, 0.35);
+            border-bottom-color: rgba(196, 149, 106, 0.1);
             border-radius: 50%;
             animation: spin 0.72s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
             margin: 0 auto 14px;
@@ -665,10 +720,10 @@
 
         /* ─── API Key Section ─────────────────────────────────── */
         #api-key-section {
-            background: rgba(240, 106, 28, 0.05);
+            background: rgba(196, 149, 106, 0.05);
             border-radius: var(--r-md);
             padding: 14px 16px;
-            border: 1px solid rgba(240, 106, 28, 0.22);
+            border: 1px solid rgba(196, 149, 106, 0.22);
         }
         #api-key-section p { font-size: 0.76em; color: var(--muted); margin-bottom: 8px; }
         #api-key-section a { color: var(--accent); }
@@ -731,21 +786,21 @@
             margin-bottom: 9px;
         }
         .route-card .route-name {
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-weight: 600;
             font-size: 0.9em;
             letter-spacing: 0.03em;
             color: var(--text);
         }
         .route-card .curviness-badge {
-            background: rgba(240, 106, 28, 0.1);
+            background: rgba(196, 149, 106, 0.1);
             color: var(--accent);
             padding: 2px 9px;
             border-radius: 20px;
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-size: 0.66em;
             font-weight: 700;
-            border: 1px solid rgba(240, 106, 28, 0.25);
+            border: 1px solid rgba(196, 149, 106, 0.25);
             letter-spacing: 0.06em;
         }
         .route-card .route-stats {
@@ -783,7 +838,7 @@
             left: 50%;
             transform: translateX(-50%);
             z-index: 1000;
-            font-family: 'Chakra Petch', sans-serif;
+            font-family: 'Cormorant Garant', sans-serif;
             font-size: 0.72em;
             font-weight: 600;
             letter-spacing: 0.1em;
@@ -868,8 +923,48 @@
             </div>
             <div class="splash-rule"></div>
             <div class="splash-tagline">Find your route</div>
-            <div class="splash-dots">
-                <span></span><span></span><span></span>
+        </div>
+        <!-- Motorcycle loading animation at bottom -->
+        <div class="splash-moto-track">
+            <div class="splash-moto-road"></div>
+            <div class="splash-moto">
+                <svg viewBox="0 0 80 42" xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">
+                    <!-- Rear wheel rim -->
+                    <circle cx="14" cy="32" r="9" stroke="currentColor" stroke-width="2.5"/>
+                    <!-- Rear wheel spokes (static inner) -->
+                    <g style="transform-origin:14px 32px" class="wheel-spin">
+                        <line x1="14" y1="23" x2="14" y2="41" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                        <line x1="5" y1="32" x2="23" y2="32" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                        <line x1="7.6" y1="25.6" x2="20.4" y2="38.4" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                        <line x1="20.4" y1="25.6" x2="7.6" y2="38.4" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                    </g>
+                    <!-- Front wheel rim -->
+                    <circle cx="66" cy="32" r="9" stroke="currentColor" stroke-width="2.5"/>
+                    <!-- Front wheel spokes -->
+                    <g style="transform-origin:66px 32px" class="wheel-spin">
+                        <line x1="66" y1="23" x2="66" y2="41" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                        <line x1="57" y1="32" x2="75" y2="32" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                        <line x1="59.6" y1="25.6" x2="72.4" y2="38.4" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                        <line x1="72.4" y1="25.6" x2="59.6" y2="38.4" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                    </g>
+                    <!-- Frame -->
+                    <path d="M14 32 L26 16 L44 12 L58 18 L66 32" stroke="currentColor" stroke-width="2.2" fill="none"/>
+                    <!-- Engine block -->
+                    <rect x="24" y="22" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.15"/>
+                    <!-- Tank -->
+                    <path d="M30 12 Q40 7 50 12 L48 20 L28 20 Z" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.25"/>
+                    <!-- Seat -->
+                    <path d="M28 16 Q36 10 46 14" stroke="currentColor" stroke-width="2.8" fill="none"/>
+                    <!-- Handlebar -->
+                    <line x1="57" y1="18" x2="62" y2="10" stroke="currentColor" stroke-width="2.2"/>
+                    <line x1="60" y1="10" x2="67" y2="9" stroke="currentColor" stroke-width="1.8"/>
+                    <!-- Exhaust pipe -->
+                    <path d="M22 28 Q16 30 10 29 Q6 29 4 28" stroke="currentColor" stroke-width="2" fill="none" opacity="0.6"/>
+                    <!-- Headlight -->
+                    <circle cx="68" cy="26" r="2.5" fill="currentColor" opacity="0.7"/>
+                    <!-- Rider silhouette (leaning forward) -->
+                    <path d="M38 12 Q42 4 50 8 L52 16 Q46 18 40 18 Z" fill="currentColor" opacity="0.3" stroke="none"/>
+                </svg>
             </div>
         </div>
     </div>
@@ -922,8 +1017,9 @@
                 </div>
 
                 <div class="mode-tabs">
-                    <div class="mode-tab active" data-mode="moto" onclick="switchMode('moto')">Motorrad</div>
-                    <div class="mode-tab" data-mode="bike" onclick="switchMode('bike')">Fahrrad</div>
+                    <div class="mode-tab active" data-mode="moto" onclick="switchMode('moto')">🏍 Moto</div>
+                    <div class="mode-tab" data-mode="road" onclick="switchMode('road')">🚴 Rennrad</div>
+                    <div class="mode-tab" data-mode="mtb" onclick="switchMode('mtb')">🚵 MTB</div>
                 </div>
 
                 <div class="section" id="route-type-section">
@@ -1000,7 +1096,7 @@
                     <div class="input-group">
                         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
                             <input type="checkbox" id="elevationEnabled" onchange="toggleElevationSlider()"
-                                   style="width:auto;margin:0;accent-color:var(--accent);">
+                                   style="width:auto;margin:0;accent-color:var(--accent-secondary);">
                             Höhenmeter begrenzen
                         </label>
                     </div>
@@ -1071,7 +1167,7 @@
 
     const ORS_BASE = 'https://api.openrouteservice.org';
     const GH_BASE  = 'https://graphhopper.com/api/1/route';
-    const COLORS = ['#f06a1c', '#00d2ff', '#7b2ff7', '#ff6b35', '#00c853'];
+    const COLORS = ['#C4956A', '#8BB5A2', '#A89BC4', '#D4A574', '#7EB09B'];
 
     // Map themes
     const mapThemes = {
@@ -1190,7 +1286,7 @@
         currentMode = mode;
         document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
 
-        if (mode === 'bike') {
+        if (mode === 'road' || mode === 'mtb') {
             routeType = 'round';
             document.getElementById('route-type-section').classList.add('hidden');
             document.getElementById('destGroup').classList.add('hidden');
@@ -1357,7 +1453,7 @@
         </svg>`;
     }
 
-    const markerColors = { start: '#00c853', dest: '#f06a1c', via1: '#00d2ff', via2: '#7b2ff7' };
+    const markerColors = { start: '#7EB09B', dest: '#C4956A', via1: '#8BB5A2', via2: '#A89BC4' };
 
     function setMarker(which, lat, lng) {
         const icon = L.divIcon({
@@ -1402,7 +1498,7 @@
         document.getElementById('results').style.display = 'none';
         foundRoutes = [];
 
-        const profile = currentMode === 'moto' ? 'driving-car' : 'cycling-regular';
+        const profile = currentMode === 'moto' ? 'driving-car' : currentMode === 'road' ? 'cycling-road' : 'cycling-mountain';
 
         try {
             if (routeType === 'round') {
@@ -1479,7 +1575,7 @@
     async function searchRoundTrips(key, profile) {
         const distanceKm = parseFloat(document.getElementById('roundDistance').value);
         const distance   = distanceKm * 1000;
-        const elevationEnabled = currentMode === 'bike' && document.getElementById('elevationEnabled').checked;
+        const elevationEnabled = (currentMode === 'road' || currentMode === 'mtb') && document.getElementById('elevationEnabled').checked;
         const maxElevation     = elevationEnabled ? parseInt(document.getElementById('maxElevation').value) : null;
 
         const viaPoints = [];
@@ -1508,7 +1604,7 @@
             ghWasAttempted = true;
             const ghKey1 = document.getElementById('ghKey').value.trim();
             const ghKey2 = document.getElementById('ghKey2').value.trim();
-            const ghProfile = currentMode === 'moto' ? 'car' : 'bike';
+            const ghProfile = currentMode === 'moto' ? 'car' : currentMode === 'road' ? 'bike' : 'mtb';
 
             for (const ghKey of [ghKey1, ghKey2].filter(k => k)) {
                 try {
@@ -1599,9 +1695,9 @@
     }
     // ============== API Calls ==============
     function getAvoidOptions() {
-        if (currentMode === 'bike') return {};
-        if (curvinessLevel === 1) return {};
-        return { avoid_features: ['highways'] };
+        if (currentMode === 'road' || currentMode === 'mtb') return {};
+        if (curvinessLevel === 1) return { avoid_features: ['tracks'] };
+        return { avoid_features: ['highways', 'tracks'] };
     }
 
     async function fetchDirectRoute(key, profile, start, end) {
@@ -1692,13 +1788,6 @@
         const allCoords = [...outCoords, ...retCoords.slice(1)];
         const curviness = calculateCurviness(allCoords);
 
-        let ascent = 0, descent = 0;
-        if (allCoords[0].length >= 3) {
-            for (let i = 1; i < allCoords.length; i++) {
-                const diff = allCoords[i][2] - allCoords[i-1][2];
-                if (diff > 0) ascent += diff; else descent += Math.abs(diff);
-            }
-        }
         return {
             name: 'Rundkurs via Zwischenziele',
             coords: allCoords,
@@ -1706,8 +1795,8 @@
             distance: outSum.distance + retSum.distance,
             duration: outSum.duration + retSum.duration,
             curviness,
-            ascent: Math.round(ascent),
-            descent: Math.round(descent),
+            ascent: Math.round((outSum.ascent || 0) + (retSum.ascent || 0)),
+            descent: Math.round((outSum.descent || 0) + (retSum.descent || 0)),
             maxElev: 0, minElev: 0,
             geojson: null
         };
@@ -1897,14 +1986,6 @@
             const latLngs = coords.map(c => [c[1], c[0]]);
             const curviness = calculateCurviness(coords);
 
-            let ascent = 0, descent = 0;
-            if (coords[0].length >= 3) {
-                for (let i = 1; i < coords.length; i++) {
-                    const diff = coords[i][2] - coords[i-1][2];
-                    if (diff > 0) ascent += diff; else descent += Math.abs(diff);
-                }
-            }
-
             const dirs = ['N','NO','O','SO','S','SW','W','NW'];
             const dir = dirs[Math.round(heading / 45) % 8];
 
@@ -1915,8 +1996,8 @@
                 distance: path.distance,
                 duration: path.time / 1000,
                 curviness,
-                ascent: Math.round(ascent),
-                descent: Math.round(descent),
+                ascent: Math.round(path.ascend || 0),
+                descent: Math.round(path.descend || 0),
                 maxElev: 0,
                 minElev: 0,
                 geojson: null
@@ -1938,12 +2019,9 @@
 
         const curviness = calculateCurviness(coords);
 
-        let ascent = 0, descent = 0, maxElev = -Infinity, minElev = Infinity;
+        let maxElev = -Infinity, minElev = Infinity;
         if (coords[0].length >= 3) {
-            for (let i = 1; i < coords.length; i++) {
-                const diff = coords[i][2] - coords[i - 1][2];
-                if (diff > 0) ascent += diff;
-                else descent += Math.abs(diff);
+            for (let i = 0; i < coords.length; i++) {
                 if (coords[i][2] > maxElev) maxElev = coords[i][2];
                 if (coords[i][2] < minElev) minElev = coords[i][2];
             }
@@ -1958,8 +2036,8 @@
             distance: summary.distance,
             duration: summary.duration,
             curviness,
-            ascent: Math.round(ascent),
-            descent: Math.round(descent),
+            ascent: Math.round(summary.ascent || 0),
+            descent: Math.round(summary.descent || 0),
             maxElev: Math.round(maxElev),
             minElev: Math.round(minElev),
             geojson: feature
@@ -2036,7 +2114,7 @@
     function displayResults() {
         if (foundRoutes.length === 0) {
             const container = document.getElementById('routeCards');
-            const elevationEnabled = currentMode === 'bike' && document.getElementById('elevationEnabled').checked;
+            const elevationEnabled = (currentMode === 'road' || currentMode === 'mtb') && document.getElementById('elevationEnabled').checked;
             const elevationMsg = elevationEnabled
                 ? `Keine Routen unter ${document.getElementById('maxElevation').value} hm gefunden – Höhenlimit erhöhen oder "Höhenmeter begrenzen" deaktivieren.`
                 : 'Keine Routen gefunden – Distanz zu groß oder Rate-Limit erreicht. Kurz warten und nochmal versuchen.';
@@ -2105,7 +2183,7 @@
                     <span class="curviness-badge">${curvinessLabel} (${route.curviness}°/km)</span>
                 </div>
                 <div class="route-stats">
-                    <span>${currentMode === 'moto' ? '🏍' : '🚲'} ${(route.distance / 1000).toFixed(1)} km</span>
+                    <span>${currentMode === 'moto' ? '🏍' : currentMode === 'road' ? '🚴' : '🚵'} ${(route.distance / 1000).toFixed(1)} km</span>
                     <span>⏱ ${formatDuration(route.duration)}</span>
                     <span>▲ ${route.ascent} hm</span>
                     ${routeType === 'ab' ? `<span>▼ ${route.descent} hm</span>` : ''}
