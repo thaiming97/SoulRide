@@ -2110,7 +2110,6 @@
                 <div class="route-actions">
                     <button class="btn-secondary" onclick="exportGPX(${idx})">GPX Export</button>
                     <button class="btn-secondary" onclick="openInGoogleMaps(${idx})">Google Maps</button>
-                    <button class="btn-secondary" onclick="openInWaze(${idx})">Waze</button>
                 </div>
             `;
             card.addEventListener('click', (e) => {
@@ -2196,13 +2195,6 @@
         window.open(url, '_blank');
     }
 
-    function openInWaze(idx) {
-        const route = foundRoutes[idx];
-        const coords = route.coords;
-        const end = coords[coords.length - 1];
-        const url = `https://waze.com/ul?ll=${end[1]},${end[0]}&navigate=yes`;
-        window.open(url, '_blank');
-    }
     </script>
 </body>
 </html>
