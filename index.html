@@ -1594,7 +1594,7 @@
 
         const offsets = curvinessLevel === 1 ? [0.02, -0.02] :
                         curvinessLevel === 2 ? [0.05, -0.05, 0.08] :
-                                               [0.1, -0.1, 0.15, -0.15];
+                                               [0.15, -0.15, 0.22, -0.22, 0.30];
 
         for (const offset of offsets) {
             const midLng = (startCoords[0] + destCoords[0]) / 2 + perpX * offset;
@@ -1720,7 +1720,7 @@
             usedFallback = true;
             usedApi = 'script';
             const radiusKm     = distanceKm / (2 * Math.PI) * 0.55;
-            const numWaypoints = curvinessLevel === 3 ? 5 : curvinessLevel === 2 ? 4 : 3;
+            const numWaypoints = curvinessLevel === 3 ? 7 : curvinessLevel === 2 ? 4 : 3;
 
             if (viaPoints.length > 0) {
                 // Mit Zwischenziel: einfache Hin-und-Rückfahrt mit leicht versetzten Rückwegen
@@ -1981,8 +1981,8 @@
                 const retExtraKm = extraKm * 0.4;
 
                 // Anzahl Zwischenpunkte je nach Kurvigkeit
-                const numOut = curvinessLevel === 3 ? 5 : curvinessLevel === 2 ? 4 : 3;
-                const numRet = curvinessLevel === 3 ? 4 : 3;
+                const numOut = curvinessLevel === 3 ? 7 : curvinessLevel === 2 ? 4 : 3;
+                const numRet = curvinessLevel === 3 ? 5 : 3;
 
                 // Hinweg: Bogenpunkte seitlich von der Start->Via Achse
                 const outLoop = [];
@@ -2021,7 +2021,7 @@
         const opts = getAvoidOptions();
         opts.round_trip = {
             length: distance,
-            points: curvinessLevel === 3 ? 8 : curvinessLevel === 2 ? 5 : 3,
+            points: curvinessLevel === 3 ? 12 : curvinessLevel === 2 ? 5 : 3,
             seed: seed
         };
 
@@ -2070,7 +2070,8 @@
     // ============== GraphHopper Round Trip ==============
     async function fetchGHRoundTrip(key, profile, start, distanceM, seed, heading) {
         // Free-Plan: kein ch.disable, kein heading (flexible mode nicht verfügbar)
-        const url = `${GH_BASE}?key=${key}&profile=${profile}&point=${start[1]},${start[0]}&algorithm=round_trip&round_trip.distance=${distanceM}&round_trip.seed=${seed}&elevation=true&points_encoded=false`;
+        const avoidParam = (currentMode !== 'road' && currentMode !== 'mtb' && curvinessLevel > 1) ? '&avoid=motorway' : '';
+        const url = `${GH_BASE}?key=${key}&profile=${profile}&point=${start[1]},${start[0]}&algorithm=round_trip&round_trip.distance=${distanceM}&round_trip.seed=${seed}&elevation=true&points_encoded=false${avoidParam}`;
 
         try {
             const res = await fetch(url);
