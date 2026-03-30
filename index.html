@@ -123,7 +123,6 @@
                 radial-gradient(ellipse 90% 70% at 80% 10%, var(--splash-grad-1) 0%, transparent 55%),
                 radial-gradient(ellipse 80% 60% at 5% 90%, var(--splash-grad-2) 0%, transparent 55%),
                 var(--splash-linear);
-            animation: splashExit 0.9s cubic-bezier(0.76, 0, 0.24, 1) 2.5s forwards;
         }
         /* Sun orb */
         #splash::before {
@@ -264,7 +263,7 @@
             position: absolute;
             bottom: 28px;
             /* start from off-screen left, ride across the full screen */
-            animation: motoRide 2.0s linear 0.3s forwards;
+            animation: motoRide 5s linear 0s infinite;
             left: -80px;
         }
         .splash-moto svg {
@@ -803,6 +802,16 @@
             border: 1px solid rgba(196, 149, 106, 0.25);
             letter-spacing: 0.06em;
         }
+        .route-card .api-badge {
+            font-size: 0.64em;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            padding: 2px 7px;
+            border-radius: 20px;
+            background: rgba(128, 128, 128, 0.1);
+            color: var(--text-muted, #888);
+            border: 1px solid rgba(128, 128, 128, 0.2);
+        }
         .route-card .route-stats {
             display: flex;
             gap: 12px;
@@ -929,41 +938,53 @@
             <div class="splash-moto-road"></div>
             <div class="splash-moto">
                 <svg viewBox="0 0 80 42" xmlns="http://www.w3.org/2000/svg" stroke-linecap="round" stroke-linejoin="round">
-                    <!-- Rear wheel rim -->
+                    <!-- Hinterrad -->
                     <circle cx="14" cy="32" r="9" stroke="currentColor" stroke-width="2.5"/>
-                    <!-- Rear wheel spokes (static inner) -->
                     <g style="transform-origin:14px 32px" class="wheel-spin">
-                        <line x1="14" y1="23" x2="14" y2="41" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-                        <line x1="5" y1="32" x2="23" y2="32" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-                        <line x1="7.6" y1="25.6" x2="20.4" y2="38.4" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-                        <line x1="20.4" y1="25.6" x2="7.6" y2="38.4" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                        <line x1="14" y1="23" x2="14" y2="41" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+                        <line x1="5"  y1="32" x2="23" y2="32" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+                        <line x1="7.6" y1="25.6" x2="20.4" y2="38.4" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+                        <line x1="20.4" y1="25.6" x2="7.6" y2="38.4" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+                        <line x1="9"   y1="24.5" x2="19"  y2="39.5" stroke="currentColor" stroke-width="1" opacity="0.3"/>
                     </g>
-                    <!-- Front wheel rim -->
+                    <!-- Vorderrad -->
                     <circle cx="66" cy="32" r="9" stroke="currentColor" stroke-width="2.5"/>
-                    <!-- Front wheel spokes -->
                     <g style="transform-origin:66px 32px" class="wheel-spin">
-                        <line x1="66" y1="23" x2="66" y2="41" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-                        <line x1="57" y1="32" x2="75" y2="32" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-                        <line x1="59.6" y1="25.6" x2="72.4" y2="38.4" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-                        <line x1="72.4" y1="25.6" x2="59.6" y2="38.4" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+                        <line x1="66" y1="23" x2="66" y2="41" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+                        <line x1="57" y1="32" x2="75" y2="32" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+                        <line x1="59.6" y1="25.6" x2="72.4" y2="38.4" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+                        <line x1="72.4" y1="25.6" x2="59.6" y2="38.4" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+                        <line x1="61"   y1="24.5" x2="71"   y2="39.5" stroke="currentColor" stroke-width="1" opacity="0.3"/>
                     </g>
-                    <!-- Frame -->
-                    <path d="M14 32 L26 16 L44 12 L58 18 L66 32" stroke="currentColor" stroke-width="2.2" fill="none"/>
-                    <!-- Engine block -->
-                    <rect x="24" y="22" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.15"/>
-                    <!-- Tank -->
-                    <path d="M30 12 Q40 7 50 12 L48 20 L28 20 Z" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.25"/>
-                    <!-- Seat -->
-                    <path d="M28 16 Q36 10 46 14" stroke="currentColor" stroke-width="2.8" fill="none"/>
-                    <!-- Handlebar -->
-                    <line x1="57" y1="18" x2="62" y2="10" stroke="currentColor" stroke-width="2.2"/>
-                    <line x1="60" y1="10" x2="67" y2="9" stroke="currentColor" stroke-width="1.8"/>
-                    <!-- Exhaust pipe -->
-                    <path d="M22 28 Q16 30 10 29 Q6 29 4 28" stroke="currentColor" stroke-width="2" fill="none" opacity="0.6"/>
-                    <!-- Headlight -->
-                    <circle cx="68" cy="26" r="2.5" fill="currentColor" opacity="0.7"/>
-                    <!-- Rider silhouette (leaning forward) -->
-                    <path d="M38 12 Q42 4 50 8 L52 16 Q46 18 40 18 Z" fill="currentColor" opacity="0.3" stroke="none"/>
+                    <!-- Rahmen: obere Schiene (Heck → Rückgrat → Lenkkopf) -->
+                    <path d="M14 32 L20 20 L40 12 L57 16" stroke="currentColor" stroke-width="2.2" fill="none"/>
+                    <!-- Rahmen: Motorwiege (untere Schiene) -->
+                    <path d="M20 20 L24 30 L50 30 L57 22 L57 16" stroke="currentColor" stroke-width="1.6" fill="none"/>
+                    <!-- Teleskopgabel (zwei Rohre) -->
+                    <line x1="57" y1="16" x2="66" y2="32" stroke="currentColor" stroke-width="2.2"/>
+                    <line x1="55" y1="17" x2="64" y2="33" stroke="currentColor" stroke-width="1.4" opacity="0.55"/>
+                    <!-- Motorblock (BMW R: breit, niedrig) -->
+                    <rect x="24" y="22" width="26" height="9" rx="2" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.15"/>
+                    <!-- Boxer-Zylinderkopf mit Kühlrippen (nach vorne ragend = BMW-Signature) -->
+                    <rect x="46" y="24" width="12" height="7" rx="2" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.1"/>
+                    <line x1="48" y1="24" x2="48" y2="31" stroke="currentColor" stroke-width="0.8" opacity="0.55"/>
+                    <line x1="50" y1="24" x2="50" y2="31" stroke="currentColor" stroke-width="0.8" opacity="0.55"/>
+                    <line x1="52" y1="24" x2="52" y2="31" stroke="currentColor" stroke-width="0.8" opacity="0.55"/>
+                    <line x1="54" y1="24" x2="54" y2="31" stroke="currentColor" stroke-width="0.8" opacity="0.55"/>
+                    <!-- Tank (gerundete BMW R Form) -->
+                    <path d="M22 20 Q30 8 46 13 L44 22 L22 22 Z" stroke="currentColor" stroke-width="1.5" fill="currentColor" opacity="0.2"/>
+                    <!-- Sitzbank (flach, BMW R) -->
+                    <path d="M22 18 Q31 12 44 16" stroke="currentColor" stroke-width="2.8" fill="none"/>
+                    <!-- Lenkerstummel + Lenkerquerrohr (BMW R aufrechte Position) -->
+                    <line x1="57" y1="16" x2="55" y2="8" stroke="currentColor" stroke-width="2"/>
+                    <path d="M51 9 Q55 7 61 8" stroke="currentColor" stroke-width="1.8" fill="none"/>
+                    <!-- Runder Scheinwerfer (BMW R Signature) -->
+                    <circle cx="68" cy="25" r="5" stroke="currentColor" stroke-width="1.8"/>
+                    <circle cx="68" cy="25" r="2.2" fill="currentColor" opacity="0.65"/>
+                    <!-- Auspuff (tief liegend, nach hinten) -->
+                    <path d="M26 31 Q18 34 13 33 Q9 33 6 32" stroke="currentColor" stroke-width="2" fill="none" opacity="0.6"/>
+                    <!-- Fahrer-Silhouette (aufrechte BMW Touring-Position) -->
+                    <path d="M34 12 Q38 4 46 8 L50 16 Q44 18 38 18 Z" fill="currentColor" opacity="0.28" stroke="none"/>
                 </svg>
             </div>
         </div>
@@ -1127,10 +1148,44 @@
             </div></div><div id="map"></div>
     </div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-    // Remove splash after animation completes
-    document.getElementById('splash').addEventListener('animationend', function() {
-        this.style.display = 'none';
-    });
+    // ── Splash-Timing: min. 3s, wartet auf Map-Ready ──────────────────────
+    const _splashT0 = performance.now();
+    let _splashMapReady = false;
+    let _splashMinReady = false;
+    let _splashExited = false;
+
+    function _trySplashExit() {
+        if (!_splashMapReady || !_splashMinReady || _splashExited) return;
+        _splashExited = true;
+        _doSplashExit();
+    }
+
+    function _doSplashExit() {
+        const moto = document.querySelector('.splash-moto');
+        // Loop-Animation einfrieren an aktueller Position
+        const currentLeft = moto.getBoundingClientRect().left;
+        moto.style.animation = 'none';
+        moto.style.left = currentLeft + 'px';
+        // Double-rAF damit Browser den neuen Wert rendert, dann nach rechts ausfahren
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                moto.style.transition = 'left 0.45s ease-in';
+                moto.style.left = 'calc(100% + 80px)';
+            });
+        });
+        // Splash-Exit 350ms nach Moto-Ausfahrt starten
+        setTimeout(() => {
+            const splash = document.getElementById('splash');
+            splash.style.animation = 'splashExit 0.9s cubic-bezier(0.76, 0, 0.24, 1) forwards';
+            splash.addEventListener('animationend', () => {
+                splash.style.display = 'none';
+            }, { once: true });
+            // Fallback: falls animationend nicht feuert (prefers-reduced-motion etc.)
+            setTimeout(() => { splash.style.display = 'none'; }, 1100);
+        }, 350);
+    }
+
+    setTimeout(() => { _splashMinReady = true; _trySplashExit(); }, 3000);
 
     // ── Bottom sheet (mobile) ──
     function toggleSheet() {
@@ -1162,6 +1217,7 @@
     let routeLayers = [];
     let foundRoutes = [];
     let usedFallback = false;
+    let usedApi = '';   // 'ors' | 'gh' | 'script'
     let geocodeTimers = {};
     let tileLayer;
 
@@ -1198,6 +1254,10 @@
         if(prefersDark.addEventListener) {
             prefersDark.addEventListener('change', updateMapTheme);
         }
+
+        // Splash: Map-Ready signalisieren (beide Events für gecachte Tiles)
+        map.on('load', () => { _splashMapReady = true; _trySplashExit(); });
+        map.whenReady(() => { _splashMapReady = true; _trySplashExit(); });
 
         // Load saved API key
         const saved = localStorage.getItem('ors_api_key');
@@ -1495,6 +1555,7 @@
         searchBtn.disabled = true;
         clearRoutes();
         usedFallback = false;
+        usedApi = '';
         document.getElementById('results').style.display = 'none';
         foundRoutes = [];
 
@@ -1586,8 +1647,8 @@
         let apiOk = false;
         let ghWasAttempted = false;
 
-        if (distanceKm <= 100 && currentMode !== 'moto') {
-            // ORS round_trip (nur für Rad/Fuß-Profile – driving-car wird von ORS nicht unterstützt)
+        if (distanceKm <= 100) {
+            // ORS round_trip (≤100 km) — alle Profile inkl. driving-car (Moto)
             try {
                 const seeds = Array.from({length: 6}, () => Math.floor(Math.random() * 900) + 1);
                 const promises = seeds.map(seed =>
@@ -1595,43 +1656,57 @@
                 );
                 const results = await Promise.allSettled(promises);
                 results.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
-                if (foundRoutes.length > 0) apiOk = true;
+                if (foundRoutes.length > 0) { apiOk = true; usedApi = 'ors'; }
             } catch(e) {
                 console.warn('ORS fehlgeschlagen:', e);
             }
         } else {
-            // GraphHopper round_trip – Key1 dann Key2
-            ghWasAttempted = true;
-            const ghKey1 = document.getElementById('ghKey').value.trim();
-            const ghKey2 = document.getElementById('ghKey2').value.trim();
-            const ghProfile = currentMode === 'moto' ? 'car' : currentMode === 'road' ? 'bike' : 'mtb';
+            // ── >100 km mit Waypoints: ORS Multi-Leg via fetchRoundTrip (nutzt intern fetchLeg mit Highway-Avoidance) ──
+            if (viaPoints.length > 0) {
+                const seeds = [1, 2, 3, 4, 5, 6];
+                const promises = seeds.map(seed =>
+                    fetchRoundTrip(getApiKey(), profile, startCoords, distance, seed, viaPoints, seed)
+                );
+                const results = await Promise.allSettled(promises);
+                results.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+                if (foundRoutes.length > 0) { apiOk = true; usedApi = 'ors'; }
+            }
 
-            for (const ghKey of [ghKey1, ghKey2].filter(k => k)) {
-                try {
-                    const seeds = [
-                        Math.floor(Math.random() * 90000) + 1,
-                        Math.floor(Math.random() * 90000) + 1
-                    ];
-                    const allRoutes = [];
-                    let rateLimited = false;
+            // GraphHopper round_trip – Key1 dann Key2 (>100 km ohne Waypoints oder Fallback)
+            if (!apiOk) {
+                ghWasAttempted = true;
+                const ghKey1 = document.getElementById('ghKey').value.trim();
+                const ghKey2 = document.getElementById('ghKey2').value.trim();
+                const ghProfile = currentMode === 'moto' ? 'car' : currentMode === 'road' ? 'bike' : 'mtb';
 
-                    for (const seed of seeds) {
-                        const route = await fetchGHRoundTrip(ghKey, ghProfile, startCoords, distance, seed);
-                        if (route === 'RATE_LIMIT') { rateLimited = true; break; }
-                        if (route) allRoutes.push(route);
-                        await new Promise(r => setTimeout(r, 800));
+                for (const ghKey of [ghKey1, ghKey2].filter(k => k)) {
+                    try {
+                        const seeds = [
+                            Math.floor(Math.random() * 90000) + 1,
+                            Math.floor(Math.random() * 90000) + 1
+                        ];
+                        const allRoutes = [];
+                        let rateLimited = false;
+
+                        for (const seed of seeds) {
+                            const route = await fetchGHRoundTrip(ghKey, ghProfile, startCoords, distance, seed);
+                            if (route === 'RATE_LIMIT') { rateLimited = true; break; }
+                            if (route) allRoutes.push(route);
+                            await new Promise(r => setTimeout(r, 800));
+                        }
+
+                        if (!rateLimited && allRoutes.length > 0) {
+                            allRoutes.sort((a, b) =>
+                                curvinessLevel === 1 ? a.curviness - b.curviness : b.curviness - a.curviness
+                            );
+                            foundRoutes.push(...allRoutes.slice(0, 3));
+                            apiOk = true;
+                            usedApi = 'gh';
+                            break;
+                        }
+                    } catch(e) {
+                        console.warn('GH fehlgeschlagen:', e);
                     }
-
-                    if (!rateLimited && allRoutes.length > 0) {
-                        allRoutes.sort((a, b) =>
-                            curvinessLevel === 1 ? a.curviness - b.curviness : b.curviness - a.curviness
-                        );
-                        foundRoutes.push(...allRoutes.slice(0, 3));
-                        apiOk = true;
-                        break;
-                    }
-                } catch(e) {
-                    console.warn('GH fehlgeschlagen:', e);
                 }
             }
         }
@@ -1639,6 +1714,7 @@
         // ── Stufe 2: Interner Fallback wenn API fehlschlug ──────────────────
         if (!apiOk) {
             usedFallback = true;
+            usedApi = 'script';
             const radiusKm     = distanceKm / (2 * Math.PI) * 0.55;
             const numWaypoints = curvinessLevel === 3 ? 5 : curvinessLevel === 2 ? 4 : 3;
 
@@ -1696,8 +1772,8 @@
     // ============== API Calls ==============
     function getAvoidOptions() {
         if (currentMode === 'road' || currentMode === 'mtb') return {};
-        if (curvinessLevel === 1) return { avoid_features: ['tracks'] };
-        return { avoid_features: ['highways', 'tracks'] };
+        if (curvinessLevel === 1) return {};
+        return { avoid_features: ['highways'] };
     }
 
     async function fetchDirectRoute(key, profile, start, end) {
@@ -2181,6 +2257,7 @@
                 <div class="route-header">
                     <span class="route-name" style="color:${COLORS[idx % COLORS.length]}">Route ${idx + 1}</span>
                     <span class="curviness-badge">${curvinessLabel} (${route.curviness}°/km)</span>
+                    ${usedApi ? `<span class="api-badge">${usedApi === 'script' ? 'Script' : usedApi.toUpperCase()}</span>` : ''}
                 </div>
                 <div class="route-stats">
                     <span>${currentMode === 'moto' ? '🏍' : currentMode === 'road' ? '🚴' : '🚵'} ${(route.distance / 1000).toFixed(1)} km</span>
