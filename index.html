@@ -922,9 +922,8 @@
                 </div>
 
                 <div class="mode-tabs">
-                    <div class="mode-tab active" data-mode="moto" onclick="switchMode('moto')">🏍 Moto</div>
-                    <div class="mode-tab" data-mode="road" onclick="switchMode('road')">🚴 Rennrad</div>
-                    <div class="mode-tab" data-mode="mtb" onclick="switchMode('mtb')">🚵 MTB</div>
+                    <div class="mode-tab active" data-mode="moto" onclick="switchMode('moto')">Motorrad</div>
+                    <div class="mode-tab" data-mode="bike" onclick="switchMode('bike')">Fahrrad</div>
                 </div>
 
                 <div class="section" id="route-type-section">
@@ -943,7 +942,7 @@
                             <input type="text" id="startInput" placeholder="Startpunkt..."
                                    oninput="geocodeDebounce('start')" onfocus="showSuggestions('start')">
                             <div class="suggestions" id="startSuggestions"></div>
-                            <button class="loc-btn" onclick="useMyLocation(this)" title="Mein Standort">📍</button>
+                            <button class="loc-btn" onclick="useMyLocation()" title="Mein Standort">📍</button>
                         </div>
                         <div id="destGroup">
                             <div class="input-card-divider"></div>
@@ -1033,10 +1032,8 @@
     </div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
     // Remove splash after animation completes
-    document.getElementById('splash').addEventListener('animationend', function(e) {
-        if (e.animationName === 'splashExit') {
-            this.style.display = 'none';
-        }
+    document.getElementById('splash').addEventListener('animationend', function() {
+        this.style.display = 'none';
     });
 
     // ── Bottom sheet (mobile) ──
@@ -1193,7 +1190,7 @@
         currentMode = mode;
         document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
 
-        if (mode === 'road' || mode === 'mtb') {
+        if (mode === 'bike') {
             routeType = 'round';
             document.getElementById('route-type-section').classList.add('hidden');
             document.getElementById('destGroup').classList.add('hidden');
@@ -1311,7 +1308,8 @@
     }
 
     // ============== GPS Location ==============
-    function useMyLocation(btn) {
+    function useMyLocation() {
+        const btn = document.querySelector('button.loc-btn');
         btn.textContent = '...';
 
         if (navigator.geolocation) {
@@ -1404,7 +1402,7 @@
         document.getElementById('results').style.display = 'none';
         foundRoutes = [];
 
-        const profile = currentMode === 'moto' ? 'driving-car' : currentMode === 'road' ? 'cycling-road' : 'cycling-mountain';
+        const profile = currentMode === 'moto' ? 'driving-car' : 'cycling-regular';
 
         try {
             if (routeType === 'round') {
@@ -1481,7 +1479,7 @@
     async function searchRoundTrips(key, profile) {
         const distanceKm = parseFloat(document.getElementById('roundDistance').value);
         const distance   = distanceKm * 1000;
-        const elevationEnabled = (currentMode === 'road' || currentMode === 'mtb') && document.getElementById('elevationEnabled').checked;
+        const elevationEnabled = currentMode === 'bike' && document.getElementById('elevationEnabled').checked;
         const maxElevation     = elevationEnabled ? parseInt(document.getElementById('maxElevation').value) : null;
 
         const viaPoints = [];
@@ -1490,9 +1488,10 @@
 
         // ── Stufe 1: ORS (≤100 km) oder GraphHopper (>100 km) ──────────────
         let apiOk = false;
+        let ghWasAttempted = false;
 
-        if (distanceKm <= 150) {
-            // ORS round_trip
+        if (distanceKm <= 100 && currentMode !== 'moto') {
+            // ORS round_trip (nur für Rad/Fuß-Profile – driving-car wird von ORS nicht unterstützt)
             try {
                 const seeds = Array.from({length: 6}, () => Math.floor(Math.random() * 900) + 1);
                 const promises = seeds.map(seed =>
@@ -1506,9 +1505,10 @@
             }
         } else {
             // GraphHopper round_trip – Key1 dann Key2
+            ghWasAttempted = true;
             const ghKey1 = document.getElementById('ghKey').value.trim();
             const ghKey2 = document.getElementById('ghKey2').value.trim();
-            const ghProfile = currentMode === 'moto' ? 'car' : currentMode === 'road' ? 'bike' : 'mtb';
+            const ghProfile = currentMode === 'moto' ? 'car' : 'bike';
 
             for (const ghKey of [ghKey1, ghKey2].filter(k => k)) {
                 try {
@@ -1599,7 +1599,7 @@
     }
     // ============== API Calls ==============
     function getAvoidOptions() {
-        if (currentMode === 'road' || currentMode === 'mtb') return {};
+        if (currentMode === 'bike') return {};
         if (curvinessLevel === 1) return {};
         return { avoid_features: ['highways'] };
     }
@@ -1881,7 +1881,7 @@
             const res = await fetch(url);
             const data = await res.json();
             if (!res.ok) {
-                console.warn('GH API Fehler:', data.message || res.status);
+                console.warn(`GH API Fehler [${res.status}]:`, data.message || data, '| Key:', key.slice(0,8)+'...');
                 if (res.status === 429) return 'RATE_LIMIT';
                 return null;
             }
@@ -2036,7 +2036,7 @@
     function displayResults() {
         if (foundRoutes.length === 0) {
             const container = document.getElementById('routeCards');
-            const elevationEnabled = (currentMode === 'road' || currentMode === 'mtb') && document.getElementById('elevationEnabled').checked;
+            const elevationEnabled = currentMode === 'bike' && document.getElementById('elevationEnabled').checked;
             const elevationMsg = elevationEnabled
                 ? `Keine Routen unter ${document.getElementById('maxElevation').value} hm gefunden – Höhenlimit erhöhen oder "Höhenmeter begrenzen" deaktivieren.`
                 : 'Keine Routen gefunden – Distanz zu groß oder Rate-Limit erreicht. Kurz warten und nochmal versuchen.';
@@ -2077,7 +2077,10 @@
                 align-items: flex-start;
                 gap: 8px;
             `;
-            info.innerHTML = `<span style="flex-shrink:0;font-size:1.1em;">⚠️</span><span style="flex:1;">GraphHopper-Kontingent erschöpft – Routen wurden intern berechnet. Qualität kann bei langen Strecken eingeschränkt sein.</span><span onclick="this.closest('div').remove()" style="flex-shrink:0;cursor:pointer;opacity:0.5;font-size:1.1em;padding-left:6px;">✕</span>`;
+            const fallbackMsg = ghWasAttempted
+                ? 'GraphHopper-Kontingent erschöpft – Routen wurden intern berechnet. Qualität kann bei langen Strecken eingeschränkt sein.'
+                : 'ORS-API nicht verfügbar (Rate-Limit oder Fehler) – Routen wurden intern berechnet.';
+            info.innerHTML = `<span style="flex-shrink:0;font-size:1.1em;">⚠️</span><span style="flex:1;">${fallbackMsg}</span><span onclick="this.closest('div').remove()" style="flex-shrink:0;cursor:pointer;opacity:0.5;font-size:1.1em;padding-left:6px;">✕</span>`;
             container.appendChild(info);
             setTimeout(() => { if (info.parentNode) info.remove(); }, 5000);
         }
@@ -2102,7 +2105,7 @@
                     <span class="curviness-badge">${curvinessLabel} (${route.curviness}°/km)</span>
                 </div>
                 <div class="route-stats">
-                    <span>${currentMode === 'moto' ? '🏍' : currentMode === 'road' ? '🚴' : '🚵'} ${(route.distance / 1000).toFixed(1)} km</span>
+                    <span>${currentMode === 'moto' ? '🏍' : '🚲'} ${(route.distance / 1000).toFixed(1)} km</span>
                     <span>⏱ ${formatDuration(route.duration)}</span>
                     <span>▲ ${route.ascent} hm</span>
                     ${routeType === 'ab' ? `<span>▼ ${route.descent} hm</span>` : ''}
@@ -2110,6 +2113,7 @@
                 <div class="route-actions">
                     <button class="btn-secondary" onclick="exportGPX(${idx})">GPX Export</button>
                     <button class="btn-secondary" onclick="openInGoogleMaps(${idx})">Google Maps</button>
+                    <button class="btn-secondary" onclick="openInWaze(${idx})">Waze</button>
                 </div>
             `;
             card.addEventListener('click', (e) => {
@@ -2195,6 +2199,13 @@
         window.open(url, '_blank');
     }
 
+    function openInWaze(idx) {
+        const route = foundRoutes[idx];
+        const coords = route.coords;
+        const end = coords[coords.length - 1];
+        const url = `https://waze.com/ul?ll=${end[1]},${end[0]}&navigate=yes`;
+        window.open(url, '_blank');
+    }
     </script>
 </body>
 </html>
