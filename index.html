@@ -1400,7 +1400,11 @@
     async function geocode(which) {
         const input = document.getElementById(inputMap[which]);
         const query = input.value.trim();
-        if (query.length < 3) return;
+        if (query.length < 3) {
+            if (which === 'via1') { via1Coords = null; removeMarker('via1'); }
+            if (which === 'via2') { via2Coords = null; removeMarker('via2'); }
+            return;
+        }
 
         try {
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=de,at,ch,it,fr&limit=6&addressdetails=1`);
@@ -1651,8 +1655,8 @@
             // ORS round_trip (≤100 km) — alle Profile inkl. driving-car (Moto)
             try {
                 const seeds = Array.from({length: 6}, () => Math.floor(Math.random() * 900) + 1);
-                const promises = seeds.map(seed =>
-                    fetchRoundTrip(getApiKey(), profile, startCoords, distance, seed, viaPoints, seed)
+                const promises = seeds.map((seed, idx) =>
+                    fetchRoundTrip(getApiKey(), profile, startCoords, distance, seed, viaPoints, idx)
                 );
                 const results = await Promise.allSettled(promises);
                 results.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
@@ -1664,8 +1668,8 @@
             // ── >100 km mit Waypoints: ORS Multi-Leg via fetchRoundTrip (nutzt intern fetchLeg mit Highway-Avoidance) ──
             if (viaPoints.length > 0) {
                 const seeds = [1, 2, 3, 4, 5, 6];
-                const promises = seeds.map(seed =>
-                    fetchRoundTrip(getApiKey(), profile, startCoords, distance, seed, viaPoints, seed)
+                const promises = seeds.map((seed, idx) =>
+                    fetchRoundTrip(getApiKey(), profile, startCoords, distance, seed, viaPoints, idx)
                 );
                 const results = await Promise.allSettled(promises);
                 results.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
@@ -1743,6 +1747,19 @@
         // ── Nachbearbeitung ──────────────────────────────────────────────────
         if (maxElevation) {
             foundRoutes = foundRoutes.filter(r => (r.ascent || 0) <= maxElevation);
+        }
+
+        // Duplikate entfernen (Sicherheitsnetz für viaPoints-Varianten)
+        if (viaPoints.length > 0 && foundRoutes.length > 1) {
+            const unique = [foundRoutes[0]];
+            for (const r of foundRoutes.slice(1)) {
+                const isDupe = r.distance > 0 && unique.some(u =>
+                    Math.abs(u.distance - r.distance) / r.distance < 0.01 &&
+                    Math.abs(u.curviness - r.curviness) < 10
+                );
+                if (!isDupe) unique.push(r);
+            }
+            foundRoutes = unique;
         }
 
         if (viaPoints.length === 0 && foundRoutes.length > 0) {
@@ -1863,6 +1880,11 @@
 
         const allCoords = [...outCoords, ...retCoords.slice(1)];
         const curviness = calculateCurviness(allCoords);
+        // ORS round_trip manchmal summary.ascent=0 obwohl Höhendaten vorhanden — Fallback aus Koordinaten
+        const _sumAsc = (outSum.ascent || 0) + (retSum.ascent || 0);
+        const _sumDesc = (outSum.descent || 0) + (retSum.descent || 0);
+        const _outFb = _sumAsc > 0 ? null : calcAscentFromCoords(outCoords);
+        const _retFb = _sumAsc > 0 ? null : calcAscentFromCoords(retCoords);
 
         return {
             name: 'Rundkurs via Zwischenziele',
@@ -1871,8 +1893,8 @@
             distance: outSum.distance + retSum.distance,
             duration: outSum.duration + retSum.duration,
             curviness,
-            ascent: Math.round((outSum.ascent || 0) + (retSum.ascent || 0)),
-            descent: Math.round((outSum.descent || 0) + (retSum.descent || 0)),
+            ascent: _sumAsc > 0 ? Math.round(_sumAsc) : (_outFb.asc + _retFb.asc),
+            descent: _sumDesc > 0 ? Math.round(_sumDesc) : (_outFb.desc + _retFb.desc),
             maxElev: 0, minElev: 0,
             geojson: null
         };
@@ -1922,7 +1944,15 @@
             const desiredKm = distance / 1000;
             const lastVia = viaPoints[viaPoints.length - 1];
             const vi = variantIndex !== undefined ? variantIndex : seed;
-            const side = (vi % 2 === 0) ? 1 : -1;
+            const _variants = [
+                { side:  1, scale: 1.0 },
+                { side: -1, scale: 1.0 },
+                { side:  1, scale: 0.5 },
+                { side: -1, scale: 0.5 },
+                { side:  1, scale: 1.5 },
+                { side: -1, scale: 1.5 },
+            ];
+            const { side, scale: variantScale } = _variants[vi % 6];
 
             const kmPerLat = 111.0;
             const kmPerLon = 111.0 * Math.cos(start[1] * Math.PI / 180);
@@ -1959,7 +1989,7 @@
                 for (let i = 1; i <= numOut; i++) {
                     const t = i / (numOut + 1);
                     // Sinusbogen: seitliche Auslenkung
-                    const perpKm = Math.sin(t * Math.PI) * (outExtraKm / Math.PI) * side;
+                    const perpKm = Math.sin(t * Math.PI) * (outExtraKm / Math.PI) * side * variantScale;
                     outLoop.push(offsetPointKm(start, dxKm * t + pxKm * perpKm, dyKm * t + pyKm * perpKm));
                 }
 
@@ -1969,7 +1999,7 @@
                 const retLoop = [];
                 for (let i = 1; i <= numRet; i++) {
                     const t = i / (numRet + 1);
-                    const perpKm = Math.sin(t * Math.PI) * (retExtraKm / Math.PI) * (-side);
+                    const perpKm = Math.sin(t * Math.PI) * (retExtraKm / Math.PI) * (-side) * variantScale;
                     retLoop.push(offsetPointKm(lastVia, rdxKm * t + pxKm * perpKm, rdyKm * t + pyKm * perpKm));
                 }
 
@@ -2085,6 +2115,17 @@
     }
 
     // ============== Route Processing ==============
+    function calcAscentFromCoords(coords) {
+        if (!coords || coords.length < 2 || coords[0].length < 3) return { asc: 0, desc: 0 };
+        let asc = 0, desc = 0;
+        for (let i = 1; i < coords.length; i++) {
+            const diff = coords[i][2] - coords[i-1][2];
+            if (diff > 0) asc += diff;
+            else desc -= diff;
+        }
+        return { asc: Math.round(asc), desc: Math.round(desc) };
+    }
+
     function processRoute(geojson, name) {
         if (!geojson.features || geojson.features.length === 0) return null;
 
@@ -2104,6 +2145,8 @@
         }
 
         const latLngs = coords.map(c => [c[1], c[0]]);
+        // ORS round_trip manchmal summary.ascent=0 obwohl Höhendaten vorhanden — Fallback aus Koordinaten
+        const _elevFb = ((summary.ascent || 0) + (summary.descent || 0)) > 0 ? null : calcAscentFromCoords(coords);
 
         return {
             name,
@@ -2112,8 +2155,8 @@
             distance: summary.distance,
             duration: summary.duration,
             curviness,
-            ascent: Math.round(summary.ascent || 0),
-            descent: Math.round(summary.descent || 0),
+            ascent: _elevFb ? _elevFb.asc : Math.round(summary.ascent),
+            descent: _elevFb ? _elevFb.desc : Math.round(summary.descent),
             maxElev: Math.round(maxElev),
             minElev: Math.round(minElev),
             geojson: feature
@@ -2268,7 +2311,6 @@
                 <div class="route-actions">
                     <button class="btn-secondary" onclick="exportGPX(${idx})">GPX Export</button>
                     <button class="btn-secondary" onclick="openInGoogleMaps(${idx})">Google Maps</button>
-                    <button class="btn-secondary" onclick="openInWaze(${idx})">Waze</button>
                 </div>
             `;
             card.addEventListener('click', (e) => {
@@ -2354,13 +2396,6 @@
         window.open(url, '_blank');
     }
 
-    function openInWaze(idx) {
-        const route = foundRoutes[idx];
-        const coords = route.coords;
-        const end = coords[coords.length - 1];
-        const url = `https://waze.com/ul?ll=${end[1]},${end[0]}&navigate=yes`;
-        window.open(url, '_blank');
-    }
     </script>
 </body>
 </html>
