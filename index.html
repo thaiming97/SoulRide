@@ -2469,9 +2469,6 @@
     }
 
     function coordsToGoogleMapsUrl(coords) {
-        const start = `${coords[0][1]},${coords[0][0]}`;
-        const end   = `${coords[coords.length - 1][1]},${coords[coords.length - 1][0]}`;
-
         // Kumulierte Distanz aufbauen
         let totalDist = 0;
         const cumDist = [0];
@@ -2480,11 +2477,13 @@
             cumDist.push(totalDist);
         }
 
-        // via:-Wegpunkte im ?api=1-Format: kein Stopp → keine Zipfel.
-        // via:-Punkte zählen nicht als Stopps, daher evtl. mehr als 8 möglich.
+        // Klassisches /dir/-Format mit 20 geografisch gleichmäßigen Wegpunkten
         const NUM_WP = 20;
+        const minDistM = Math.max(500, totalDist / (NUM_WP * 2));
         const stepDist = totalDist / (NUM_WP + 1);
-        const viaPoints = [];
+
+        const allPoints = [`${coords[0][1]},${coords[0][0]}`];
+        let lastDist = 0;
         for (let j = 1; j <= NUM_WP; j++) {
             const targetDist = j * stepDist;
             if (targetDist >= totalDist) break;
@@ -2492,13 +2491,16 @@
             for (let i = 1; i < coords.length - 1; i++) {
                 if (Math.abs(cumDist[i] - targetDist) < Math.abs(cumDist[best] - targetDist)) best = i;
             }
-            viaPoints.push(`via:${coords[best][1]},${coords[best][0]}`);
+            if (cumDist[best] - lastDist >= minDistM) {
+                allPoints.push(`${coords[best][1]},${coords[best][0]}`);
+                lastDist = cumDist[best];
+            }
         }
+        allPoints.push(`${coords[coords.length-1][1]},${coords[coords.length-1][0]}`);
 
-        const wStr = viaPoints.length > 0 ? `&waypoints=${viaPoints.join('|')}` : '';
         // Moto: Autobahnen immer vermeiden (alle Kurvigkeitsstufen)
-        const avoidStr = currentMode === 'moto' ? '&avoid=highways' : '';
-        return `https://www.google.com/maps/dir/?api=1&origin=${start}&destination=${end}${wStr}${avoidStr}`;
+        const avoidStr = currentMode === 'moto' ? '?avoid=highways' : '';
+        return `https://www.google.com/maps/dir/${allPoints.join('/')}${avoidStr}`;
     }
 
     function openInGoogleMaps(idx) {
