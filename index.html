@@ -2455,7 +2455,6 @@
                 <div class="route-actions">
                     <button class="btn-secondary" onclick="exportGPX(${idx})">GPX</button>
                     <button class="btn-secondary" onclick="openInGoogleMaps(${idx})">Google Maps</button>
-                    <button class="btn-secondary" onclick="openInMyMaps(${idx})">Meine Karten</button>
                 </div>
             `;
             card.addEventListener('click', (e) => {
@@ -2494,58 +2493,6 @@
     }
 
     // ============== Export / Open ==============
-    function showToast(html, durationMs = 6000) {
-        const existing = document.getElementById('my-maps-toast');
-        if (existing) existing.remove();
-        const toast = document.createElement('div');
-        toast.id = 'my-maps-toast';
-        toast.innerHTML = html;
-        Object.assign(toast.style, {
-            position: 'fixed', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
-            background: 'var(--surface)', border: '1px solid var(--accent)',
-            color: 'var(--text)', padding: '12px 18px', borderRadius: '10px',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.18)', zIndex: 9999,
-            fontSize: '0.85em', lineHeight: '1.5', textAlign: 'center',
-            maxWidth: '320px', pointerEvents: 'none'
-        });
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), durationMs);
-    }
-
-    function openInMyMaps(idx) {
-        const route = foundRoutes[idx];
-        _openInMyMapsFromCoords(route.coords, route.name, idx + 1);
-    }
-
-    function _openInMyMapsFromCoords(coords, name, fileNum) {
-        // KML generieren (Google My Maps native Format)
-        const coordStr = coords.map(c => `${c[0].toFixed(6)},${c[1].toFixed(6)}${c[2] !== undefined ? ',' + c[2].toFixed(1) : ''}`).join(' ');
-        const kml = `<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-  <Document>
-    <name>${name}</name>
-    <Placemark>
-      <name>${name}</name>
-      <LineString>
-        <tessellate>1</tessellate>
-        <coordinates>${coordStr}</coordinates>
-      </LineString>
-    </Placemark>
-  </Document>
-</kml>`;
-        const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href = url;
-        a.download = `soulride_route_${fileNum}.kml`;
-        a.click();
-        URL.revokeObjectURL(url);
-
-        // Google My Maps öffnen
-        setTimeout(() => window.open('https://www.google.com/maps/d/create', '_blank'), 300);
-
-        showToast('📥 KML heruntergeladen.<br><b>In Google My Maps:</b><br>„Importieren" → KML-Datei wählen');
-    }
 
     function exportGPX(idx) {
         const route = foundRoutes[idx];
@@ -2760,7 +2707,6 @@
                 <div class="route-actions">
                     <button class="btn-secondary" onclick="clearGPXImport()">Entfernen</button>
                     <button class="btn-secondary" onclick="window.open(coordsToGoogleMapsUrl(gpxCoords), '_blank')">Google Maps</button>
-                    <button class="btn-secondary" onclick="_openInMyMapsFromCoords(gpxCoords,'GPX Route',1)">Meine Karten</button>
                 </div>
             </div>
         `;
