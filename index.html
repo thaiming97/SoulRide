@@ -1154,25 +1154,6 @@
                             <span class="icon">≈</span>
                             Maximal
                         </div>
-                        <div class="curviness-btn" data-level="4" onclick="setCurviness(4)">
-                            <span class="icon">⚙</span>
-                            Eigene
-                        </div>
-                    </div>
-                    <div id="custom-curviness-panel" class="hidden" style="margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                            <span style="font-size:0.82em;color:var(--text-soft);">Kurvigkeit</span>
-                            <span id="custom-curviness-label" style="font-size:0.82em;font-weight:600;color:var(--accent);">7</span>
-                        </div>
-                        <input type="range" id="custom-curviness-slider" min="1" max="10" value="7"
-                               style="width:100%;accent-color:var(--accent);margin-bottom:12px;"
-                               oninput="customCurviness=parseInt(this.value);document.getElementById('custom-curviness-label').textContent=this.value;">
-                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.82em;color:var(--text-soft);">
-                            <input type="checkbox" id="avoid-primary-cb"
-                                   style="width:auto;margin:0;accent-color:var(--accent-secondary);"
-                                   onchange="avoidPrimary=this.checked;">
-                            Bundesstraßen vermeiden (best effort)
-                        </label>
                     </div>
                 </div>
 
@@ -1295,7 +1276,6 @@
 
     // ============== State ==============
     let map, currentMode = 'moto', routeType = 'ab', curvinessLevel = 2;
-    let customCurviness = 7, avoidPrimary = false;
     let startCoords = null, destCoords = null;
     let via1Coords = null, via2Coords = null;
     let startMarker = null, destMarker = null, via1Marker = null, via2Marker = null;
@@ -1466,7 +1446,6 @@
     function setCurviness(level) {
         curvinessLevel = level;
         document.querySelectorAll('.curviness-btn').forEach(b => b.classList.toggle('active', parseInt(b.dataset.level) === level));
-        document.getElementById('custom-curviness-panel').classList.toggle('hidden', level !== 4);
     }
 
     function updateElevationLabel() {
@@ -1682,8 +1661,7 @@
         const perpX = -dy / dist;
         const perpY = dx / dist;
 
-        const offsets = curvinessLevel === 4 ? getCustomRouteParams(customCurviness).offsets :
-                        curvinessLevel === 1 ? [0.02, -0.02] :
+        const offsets = curvinessLevel === 1 ? [0.02, -0.02] :
                         curvinessLevel === 2 ? [0.05, -0.05, 0.08] :
                                                [0.15, -0.15, 0.22, -0.22, 0.30];
 
@@ -1811,8 +1789,7 @@
             usedFallback = true;
             usedApi = 'script';
             const radiusKm     = distanceKm / (2 * Math.PI) * 0.55;
-            const numWaypoints = curvinessLevel === 4 ? getCustomRouteParams(customCurviness).numWaypoints :
-                                   curvinessLevel === 3 ? 7 : curvinessLevel === 2 ? 4 : 3;
+            const numWaypoints = curvinessLevel === 3 ? 7 : curvinessLevel === 2 ? 4 : 3;
 
             if (viaPoints.length > 0) {
                 // Mit Zwischenziel: einfache Hin-und-Rückfahrt mit leicht versetzten Rückwegen
@@ -1879,39 +1856,10 @@
         foundRoutes._desiredDistance = distance;
     }
     // ============== API Calls ==============
-    // Interpoliert Routing-Parameter für Benutzerdefiniert-Modus (level 1–10)
-    function getCustomRouteParams(level) {
-        // Stützpunkte: [level, points, maxOffset, numOut, numWaypoints]
-        const pts = [
-            [1,  3,  0.02, 2, 2],
-            [4,  5,  0.08, 3, 3],
-            [7,  12, 0.30, 7, 7],
-            [8,  14, 0.40, 8, 8],
-            [9,  17, 0.55, 9, 9],
-            [10, 20, 0.70, 10, 10],
-        ];
-        // Lineare Interpolation zwischen den Stützpunkten
-        let lo = pts[0], hi = pts[pts.length - 1];
-        for (let i = 0; i < pts.length - 1; i++) {
-            if (level >= pts[i][0] && level <= pts[i+1][0]) { lo = pts[i]; hi = pts[i+1]; break; }
-        }
-        const t = lo[0] === hi[0] ? 0 : (level - lo[0]) / (hi[0] - lo[0]);
-        const lerp = (a, b) => Math.round((a + (b - a) * t) * 100) / 100;
-        const points      = Math.round(lerp(lo[1], hi[1]));
-        const maxOffset   = lerp(lo[2], hi[2]);
-        const numOut      = Math.round(lerp(lo[3], hi[3]));
-        const numWaypoints = Math.round(lerp(lo[4], hi[4]));
-        // Offsets: symmetrisch um 0, skaliert mit maxOffset
-        const offsets = [-maxOffset, maxOffset, -maxOffset * 0.7, maxOffset * 0.7, maxOffset * 1.2].slice(0, numOut);
-        return { points, offsets, numOut, numRet: Math.max(2, numOut - 2), numWaypoints };
-    }
-
     function getAvoidOptions() {
         if (currentMode === 'road' || currentMode === 'mtb') return {};
         if (curvinessLevel === 1) return {};
-        const features = ['highways'];
-        if (curvinessLevel === 4 && avoidPrimary) features.push('primary', 'secondary');
-        return { avoid_features: features };
+        return { avoid_features: ['highways'] };
     }
 
     async function fetchDirectRoute(key, profile, start, end) {
@@ -2102,9 +2050,8 @@
                 const retExtraKm = extraKm * 0.4;
 
                 // Anzahl Zwischenpunkte je nach Kurvigkeit
-                const _cp    = curvinessLevel === 4 ? getCustomRouteParams(customCurviness) : null;
-                const numOut = _cp ? _cp.numOut : curvinessLevel === 3 ? 7 : curvinessLevel === 2 ? 4 : 3;
-                const numRet = _cp ? _cp.numRet : curvinessLevel === 3 ? 5 : 3;
+                const numOut = curvinessLevel === 3 ? 7 : curvinessLevel === 2 ? 4 : 3;
+                const numRet = curvinessLevel === 3 ? 5 : 3;
 
                 // Hinweg: Bogenpunkte seitlich von der Start->Via Achse
                 const outLoop = [];
@@ -2143,8 +2090,7 @@
         const opts = getAvoidOptions();
         opts.round_trip = {
             length: distance,
-            points: curvinessLevel === 4 ? getCustomRouteParams(customCurviness).points :
-                    curvinessLevel === 3 ? 12 : curvinessLevel === 2 ? 5 : 3,
+            points: curvinessLevel === 3 ? 12 : curvinessLevel === 2 ? 5 : 3,
             seed: seed
         };
 
@@ -2453,7 +2399,7 @@
                     ${routeType === 'ab' ? `<span>▼ ${route.descent} hm</span>` : ''}
                 </div>
                 <div class="route-actions">
-                    <button class="btn-secondary" onclick="exportGPX(${idx})">GPX</button>
+                    <button class="btn-secondary" onclick="exportGPX(${idx})">GPX Export</button>
                     <button class="btn-secondary" onclick="openInGoogleMaps(${idx})">Google Maps</button>
                 </div>
             `;
@@ -2493,7 +2439,6 @@
     }
 
     // ============== Export / Open ==============
-
     function exportGPX(idx) {
         const route = foundRoutes[idx];
         let gpx = `<?xml version="1.0" encoding="UTF-8"?>
@@ -2532,36 +2477,30 @@
             cumDist.push(totalDist);
         }
 
-        // Schritt 1: 20 Wegpunkte geografisch gleichmäßig verteilen
-        const NUM_WP   = 20;
+        // Klassisches /dir/-Format mit 20 geografisch gleichmäßigen Wegpunkten
+        const NUM_WP = 20;
+        const minDistM = Math.max(500, totalDist / (NUM_WP * 2));
         const stepDist = totalDist / (NUM_WP + 1);
-        const wps      = [coords[0]];
+
+        const allPoints = [`${coords[0][1]},${coords[0][0]}`];
+        let lastDist = 0;
         for (let j = 1; j <= NUM_WP; j++) {
-            const target = j * stepDist;
-            if (target >= totalDist) break;
+            const targetDist = j * stepDist;
+            if (targetDist >= totalDist) break;
             let best = 1;
             for (let i = 1; i < coords.length - 1; i++) {
-                if (Math.abs(cumDist[i] - target) < Math.abs(cumDist[best] - target)) best = i;
+                if (Math.abs(cumDist[i] - targetDist) < Math.abs(cumDist[best] - targetDist)) best = i;
             }
-            wps.push(coords[best]);
-        }
-        wps.push(coords[coords.length - 1]);
-
-        // Schritt 2: Zipfel-Pass — Wegpunkt B entfernen wenn A→B→C
-        // eine Richtungsumkehr > 110° erzeugt
-        function angleDiff(a, b) { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
-        let changed = true;
-        while (changed && wps.length > 2) {
-            changed = false;
-            for (let i = 1; i < wps.length - 1; i++) {
-                const bAB = bearing(wps[i-1][1], wps[i-1][0], wps[i][1],   wps[i][0]);
-                const bBC = bearing(wps[i][1],   wps[i][0],   wps[i+1][1], wps[i+1][0]);
-                if (angleDiff(bAB, bBC) > 110) { wps.splice(i, 1); changed = true; break; }
+            if (cumDist[best] - lastDist >= minDistM) {
+                allPoints.push(`${coords[best][1]},${coords[best][0]}`);
+                lastDist = cumDist[best];
             }
         }
+        allPoints.push(`${coords[coords.length-1][1]},${coords[coords.length-1][0]}`);
 
+        // Moto: Autobahnen immer vermeiden (alle Kurvigkeitsstufen)
         const avoidStr = currentMode === 'moto' ? '?avoid=highways' : '';
-        return `https://www.google.com/maps/dir/${wps.map(c => `${c[1]},${c[0]}`).join('/')}${avoidStr}`;
+        return `https://www.google.com/maps/dir/${allPoints.join('/')}${avoidStr}`;
     }
 
     function openInGoogleMaps(idx) {
