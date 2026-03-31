@@ -2259,6 +2259,26 @@
         return Math.round(totalAngleChange / distKm);
     }
 
+    // Ramer-Douglas-Peucker: findet Schlüssel-Kurvenpunkte (Indizes)
+    function rdpIndices(coords, epsilon, lo, hi) {
+        if (hi - lo < 2) return [];
+        let maxDist = 0, maxI = lo + 1;
+        const ax = coords[lo][0], ay = coords[lo][1];
+        const bx = coords[hi][0], by = coords[hi][1];
+        const dx = bx - ax, dy = by - ay;
+        const len = Math.sqrt(dx*dx + dy*dy);
+        for (let i = lo + 1; i < hi; i++) {
+            const d = len < 1e-10
+                ? Math.sqrt((coords[i][0]-ax)**2 + (coords[i][1]-ay)**2)
+                : Math.abs(dy*coords[i][0] - dx*coords[i][1] + bx*ay - by*ax) / len;
+            if (d > maxDist) { maxDist = d; maxI = i; }
+        }
+        if (maxDist > epsilon) {
+            return [...rdpIndices(coords, epsilon, lo, maxI), maxI, ...rdpIndices(coords, epsilon, maxI, hi)];
+        }
+        return [];
+    }
+
     function detectZipfelKm(coords) {
         if (coords.length < 4) return 0;
         const GRID = 0.003; 
@@ -2449,16 +2469,38 @@
     }
 
     function coordsToGoogleMapsUrl(coords) {
-        const start = `${coords[0][1]},${coords[0][0]}`;
-        const end   = `${coords[coords.length - 1][1]},${coords[coords.length - 1][0]}`;
-        const waypoints = [];
-        const step = Math.floor(coords.length / 9);
-        for (let i = step; i < coords.length - step; i += step) {
-            if (waypoints.length >= 8) break;
-            waypoints.push(`${coords[i][1]},${coords[i][0]}`);
+        // Kumulierte Distanz aufbauen
+        let totalDist = 0;
+        const cumDist = [0];
+        for (let i = 1; i < coords.length; i++) {
+            totalDist += haversine(coords[i-1][1], coords[i-1][0], coords[i][1], coords[i][0]);
+            cumDist.push(totalDist);
         }
-        const wStr = waypoints.length > 0 ? `&waypoints=${waypoints.join('|')}` : '';
-        return `https://www.google.com/maps/dir/?api=1&origin=${start}&destination=${end}${wStr}`;
+
+        // Klassisches /dir/-Format: bis zu 20 Zwischenpunkte geografisch gleichmäßig verteilen
+        const NUM_WP = 20;
+        const minDistM = Math.max(500, totalDist / (NUM_WP * 2));
+        const stepDist = totalDist / (NUM_WP + 1);
+
+        const allPoints = [`${coords[0][1]},${coords[0][0]}`];
+        let lastDist = 0;
+        for (let j = 1; j <= NUM_WP; j++) {
+            const targetDist = j * stepDist;
+            if (targetDist >= totalDist) break;
+            let best = 1;
+            for (let i = 1; i < coords.length - 1; i++) {
+                if (Math.abs(cumDist[i] - targetDist) < Math.abs(cumDist[best] - targetDist)) best = i;
+            }
+            if (cumDist[best] - lastDist >= minDistM) {
+                allPoints.push(`${coords[best][1]},${coords[best][0]}`);
+                lastDist = cumDist[best];
+            }
+        }
+        allPoints.push(`${coords[coords.length-1][1]},${coords[coords.length-1][0]}`);
+
+        // Moto: Autobahnen immer vermeiden (alle Kurvigkeitsstufen)
+        const avoidStr = currentMode === 'moto' ? '?avoid=highways' : '';
+        return `https://www.google.com/maps/dir/${allPoints.join('/')}${avoidStr}`;
     }
 
     function openInGoogleMaps(idx) {
