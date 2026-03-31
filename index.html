@@ -1051,35 +1051,22 @@
 
             <div class="sidebar-body">
 
-                <input type="hidden" id="ghKey"  value="3d6431f2-27a7-4bbb-8a49-1dd858cfc6bf">
-                <input type="hidden" id="ghKey2" value="e277050a-2936-45e9-8246-b5223a25123f">
-                <input type="hidden" id="apiKey"  value="eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjBmZmQzMGJkNmRkYTRhNTFhMzU4Y2M0ZGNlNzhmZTM2IiwiaCI6Im11cm11cjY0In0=">
-                <input type="hidden" id="apiKey2" value="eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjM1MzM2MjFkYThiOTRhZWU4ZTVkNTQyNjA5MzE4MDkxIiwiaCI6Im11cm11cjY0In0=">
-                <input type="hidden" id="apiKey3" value="eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImRkNWJlZGE1MTQ0YzQ2Y2ZiMmE2YmY4YTA1M2M4MjQwIiwiaCI6Im11cm11cjY0In0=">
+                <div id="hidden-ors-keys"></div>
+                <div id="hidden-gh-keys"></div>
 
                 <div id="api-key-section" class="section hidden">
                     <h3>API-Keys</h3>
-                    <div class="input-group">
-                        <label>Key 1</label>
-                        <input type="text" id="apiKeyVisible"  value="eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjBmZmQzMGJkNmRkYTRhNTFhMzU4Y2M0ZGNlNzhmZTM2IiwiaCI6Im11cm11cjY0In0=" placeholder="API-Key 1...">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                        <label style="font-size:0.78em;color:var(--text-soft);letter-spacing:0.04em;">ORS-Keys</label>
+                        <button onclick="addOrsKey()" style="background:none;border:1px solid var(--line-soft);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:1em;color:var(--accent);cursor:pointer;padding:0;line-height:1;" title="ORS-Key hinzufügen">+</button>
                     </div>
-                    <div class="input-group">
-                        <label>Key 2</label>
-                        <input type="text" id="apiKeyVisible2" value="eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjM1MzM2MjFkYThiOTRhZWU4ZTVkNTQyNjA5MzE4MDkxIiwiaCI6Im11cm11cjY0In0=" placeholder="API-Key 2 (optional)...">
+                    <div id="ors-keys-list"></div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;margin-top:10px;">
+                        <label style="font-size:0.78em;color:var(--text-soft);letter-spacing:0.04em;">GraphHopper-Keys</label>
+                        <button onclick="addGhKey()" style="background:none;border:1px solid var(--line-soft);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:1em;color:var(--accent);cursor:pointer;padding:0;line-height:1;" title="GH-Key hinzufügen">+</button>
                     </div>
-                    <div class="input-group">
-                        <label>Key 3</label>
-                        <input type="text" id="apiKeyVisible3" value="eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImRkNWJlZGE1MTQ0YzQ2Y2ZiMmE2YmY4YTA1M2M4MjQwIiwiaCI6Im11cm11cjY0In0=" placeholder="API-Key 3 (optional)...">
-                    </div>
-                    <div class="input-group">
-                        <label>GraphHopper Key (für Routen &gt;100km)</label>
-                        <input type="text" id="ghKeyVisible" value="3d6431f2-27a7-4bbb-8a49-1dd858cfc6bf" placeholder="GraphHopper API-Key...">
-                    </div>
-                    <div class="input-group">
-                        <label>GraphHopper Key 2 (Fallback)</label>
-                        <input type="text" id="ghKeyVisible2" value="e277050a-2936-45e9-8246-b5223a25123f" placeholder="GraphHopper API-Key 2...">
-                    </div>
-                    <button class="btn-secondary" onclick="saveApiKey()" style="width:100%;margin-top:4px;">Speichern</button>
+                    <div id="gh-keys-list"></div>
+                    <button class="btn-secondary" onclick="saveApiKey()" style="width:100%;margin-top:8px;">Speichern</button>
                 </div>
 
                 <div class="mode-tabs">
@@ -1276,6 +1263,7 @@
 
     // ============== State ==============
     let map, currentMode = 'moto', routeType = 'ab', curvinessLevel = 2;
+    let customCurviness = 7, avoidPrimary = false;
     let startCoords = null, destCoords = null;
     let via1Coords = null, via2Coords = null;
     let startMarker = null, destMarker = null, via1Marker = null, via2Marker = null;
@@ -1283,6 +1271,7 @@
     let foundRoutes = [];
     let usedFallback = false;
     let usedApi = '';   // 'ors' | 'gh' | 'script'
+    let ghWasAttempted = false;
     // GPX Import state
     let gpxLayer = null;
     let gpxFileData = null; // { file, name }
@@ -1290,8 +1279,9 @@
     let geocodeTimers = {};
     let tileLayer;
 
-    const ORS_BASE = 'https://api.openrouteservice.org';
-    const GH_BASE  = 'https://graphhopper.com/api/1/route';
+    const ORS_BASE  = 'https://api.openrouteservice.org';
+    const GH_BASE   = 'https://graphhopper.com/api/1/route';
+    const OSRM_BASE = 'https://router.project-osrm.org/route/v1/driving';
     const COLORS = ['#C4956A', '#8BB5A2', '#A89BC4', '#D4A574', '#7EB09B'];
 
     // Map themes
@@ -1328,12 +1318,6 @@
         map.on('load', () => { _splashMapReady = true; _trySplashExit(); });
         map.whenReady(() => { _splashMapReady = true; _trySplashExit(); });
 
-        // Load saved API key
-        const saved = localStorage.getItem('ors_api_key');
-        if (saved) {
-            document.getElementById('apiKey').value = saved;
-            document.getElementById('api-key-section').style.borderColor = '#0f3460';
-        }
 
         // Click on map to set start/dest
         map.on('click', async (e) => {
@@ -1365,49 +1349,113 @@
     // ============== API Key ==============
     let _orsKeyIndex = 0;
 
+    function getOrsKeys() {
+        return Array.from(document.querySelectorAll('#hidden-ors-keys input[type=hidden]'))
+            .map(el => el.value.trim()).filter(k => k);
+    }
+    function getGhKeys() {
+        return Array.from(document.querySelectorAll('#hidden-gh-keys input[type=hidden]'))
+            .map(el => el.value.trim()).filter(k => k);
+    }
+
     function getApiKey() {
-        const keys = ['apiKey', 'apiKey2', 'apiKey3']
-            .map(id => document.getElementById(id).value.trim())
-            .filter(k => k.length > 0);
+        const keys = getOrsKeys();
         if (keys.length === 0) return '';
         return keys[_orsKeyIndex++ % keys.length];
     }
 
+    function _renderKeyRow(listId, value, index, type) {
+        const list = document.getElementById(listId);
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:6px;';
+        row.dataset.index = index;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = value;
+        input.placeholder = type === 'ors' ? 'ORS API-Key...' : 'GraphHopper API-Key...';
+        input.style.cssText = 'flex:1;';
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') saveApiKey(); });
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = '×';
+        removeBtn.title = 'Entfernen';
+        removeBtn.style.cssText = 'background:none;border:1px solid var(--line-soft);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:1em;color:var(--muted);cursor:pointer;padding:0;flex-shrink:0;';
+        removeBtn.onclick = () => { row.remove(); saveApiKey(); };
+        row.appendChild(input);
+        row.appendChild(removeBtn);
+        list.appendChild(row);
+        return input;
+    }
+
+    function addOrsKey(value = '') {
+        const list = document.getElementById('ors-keys-list');
+        const idx = list.children.length;
+        const input = _renderKeyRow('ors-keys-list', value, idx, 'ors');
+        if (!value) input.focus();
+    }
+
+    function addGhKey(value = '') {
+        const list = document.getElementById('gh-keys-list');
+        const idx = list.children.length;
+        const input = _renderKeyRow('gh-keys-list', value, idx, 'gh');
+        if (!value) input.focus();
+    }
+
     function saveApiKey() {
-        [['apiKeyVisible','apiKey','ors_api_key'],
-         ['apiKeyVisible2','apiKey2','ors_api_key2'],
-         ['apiKeyVisible3','apiKey3','ors_api_key3'],
-         ['ghKeyVisible','ghKey','gh_api_key'],
-         ['ghKeyVisible2','ghKey2','gh_api_key2']].forEach(([visId, hidId, lsKey]) => {
-            const val = document.getElementById(visId)?.value.trim();
-            if (val) {
-                document.getElementById(hidId).value = val;
-                try { localStorage.setItem(lsKey, val); } catch(e) {}
-            }
+        // ORS
+        const orsVals = Array.from(document.querySelectorAll('#ors-keys-list input[type=text]'))
+            .map(el => el.value.trim()).filter(k => k);
+        const hidOrs = document.getElementById('hidden-ors-keys');
+        hidOrs.innerHTML = '';
+        orsVals.forEach(v => {
+            const h = document.createElement('input');
+            h.type = 'hidden'; h.value = v;
+            hidOrs.appendChild(h);
         });
+        try { localStorage.setItem('ors_keys', JSON.stringify(orsVals)); } catch(e) {}
+
+        // GH
+        const ghVals = Array.from(document.querySelectorAll('#gh-keys-list input[type=text]'))
+            .map(el => el.value.trim()).filter(k => k);
+        const hidGh = document.getElementById('hidden-gh-keys');
+        hidGh.innerHTML = '';
+        ghVals.forEach(v => {
+            const h = document.createElement('input');
+            h.type = 'hidden'; h.value = v;
+            hidGh.appendChild(h);
+        });
+        try { localStorage.setItem('gh_keys', JSON.stringify(ghVals)); } catch(e) {}
+
         const btn = document.querySelector('#api-key-section .btn-secondary');
         btn.textContent = 'Gespeichert!';
         setTimeout(() => { btn.textContent = 'Speichern'; }, 2000);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        ['apiKeyVisible','apiKeyVisible2','apiKeyVisible3'].forEach(id => {
-            document.getElementById(id).addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') saveApiKey();
-            });
-        });
-        [['ors_api_key','apiKey','apiKeyVisible'],
-         ['ors_api_key2','apiKey2','apiKeyVisible2'],
-         ['ors_api_key3','apiKey3','apiKeyVisible3'],
-         ['gh_api_key','ghKey','ghKeyVisible'],
-         ['gh_api_key2','ghKey2','ghKeyVisible2']].forEach(([lsKey, hidId, visId]) => {
-            const saved = localStorage.getItem(lsKey);
-            if (saved) {
-                document.getElementById(hidId).value = saved;
-                const visEl = document.getElementById(visId);
-                if (visEl) visEl.value = saved;
-            }
-        });
+        // Standardwerte (hardcoded)
+        const defaultOrs = [
+            'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjBmZmQzMGJkNmRkYTRhNTFhMzU4Y2M0ZGNlNzhmZTM2IiwiaCI6Im11cm11cjY0In0=',
+            'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjM1MzM2MjFkYThiOTRhZWU4ZTVkNTQyNjA5MzE4MDkxIiwiaCI6Im11cm11cjY0In0=',
+            'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImRkNWJlZGE1MTQ0YzQ2Y2ZiMmE2YmY4YTA1M2M4MjQwIiwiaCI6Im11cm11cjY0In0=',
+            'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjdjOTQyZDQ0YzVhMjQyMGE4ZjI4N2IwNDAzNjQ3MGI4IiwiaCI6Im11cm11cjY0In0='
+        ];
+        const defaultGh = [
+            '3d6431f2-27a7-4bbb-8a49-1dd858cfc6bf',
+            'e277050a-2936-45e9-8246-b5223a25123f'
+        ];
+
+        let orsKeys = defaultOrs, ghKeys = defaultGh;
+        try {
+            const saved = JSON.parse(localStorage.getItem('ors_keys') || '[]');
+            if (saved.length > 0) orsKeys = saved;
+        } catch(e) {}
+        try {
+            const saved = JSON.parse(localStorage.getItem('gh_keys') || '[]');
+            if (saved.length > 0) ghKeys = saved;
+        } catch(e) {}
+
+        orsKeys.forEach(v => addOrsKey(v));
+        ghKeys.forEach(v => addGhKey(v));
+        saveApiKey();
     });
 
     // ============== Mode Switching ==============
@@ -1526,7 +1574,7 @@
     }
 
     async function reverseGeocode(lat, lng) {
-        const key = getApiKey();
+        const key = getOrsKeys()[0] || '';
         if (!key) return null;
         try {
             const res = await fetch(`${ORS_BASE}/geocode/reverse?api_key=${key}&point.lon=${lng}&point.lat=${lat}&size=1`);
@@ -1617,7 +1665,7 @@
 
     // ============== Route Searching ==============
     async function searchRoutes() {
-        const key = getApiKey();
+        const key = getOrsKeys()[0] || '';
         if (!key) { alert('Bitte zuerst einen API-Key eintragen!'); return; }
         if (!startCoords) { alert('Bitte Startpunkt setzen!'); return; }
         if (routeType === 'ab' && !destCoords) { alert('Bitte Zielpunkt setzen!'); return; }
@@ -1629,6 +1677,7 @@
         clearRoutes();
         usedFallback = false;
         usedApi = '';
+        ghWasAttempted = false;
         document.getElementById('results').style.display = 'none';
         foundRoutes = [];
 
@@ -1652,34 +1701,58 @@
     }
 
     async function searchABRoutes(key, profile) {
-        const promises = [];
-        promises.push(fetchDirectRoute(key, profile, startCoords, destCoords));
-
         const dx = destCoords[0] - startCoords[0];
         const dy = destCoords[1] - startCoords[1];
         const dist = Math.sqrt(dx*dx + dy*dy);
         const perpX = -dy / dist;
         const perpY = dx / dist;
 
-        const offsets = curvinessLevel === 1 ? [0.02, -0.02] :
+        const offsets = curvinessLevel === 4 ? getCustomRouteParams(customCurviness).offsets :
+                        curvinessLevel === 1 ? [0.02, -0.02] :
                         curvinessLevel === 2 ? [0.05, -0.05, 0.08] :
                                                [0.15, -0.15, 0.22, -0.22, 0.30];
 
-        for (const offset of offsets) {
-            const midLng = (startCoords[0] + destCoords[0]) / 2 + perpX * offset;
-            const midLat = (startCoords[1] + destCoords[1]) / 2 + perpY * offset;
-            promises.push(fetchRouteViaWaypoint(key, profile, startCoords, [midLng, midLat], destCoords));
+        const viaCoords = offsets.map(o => [
+            (startCoords[0] + destCoords[0]) / 2 + perpX * o,
+            (startCoords[1] + destCoords[1]) / 2 + perpY * o
+        ]);
+
+        // ── Stufe 1: ORS ──────────────────────────────────────────────────────
+        const orsPromises = [
+            fetchDirectRoute(key, profile, startCoords, destCoords),
+            ...viaCoords.map(via => fetchRouteViaWaypoint(key, profile, startCoords, via, destCoords))
+        ];
+        const orsResults = await Promise.allSettled(orsPromises);
+        orsResults.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+        if (foundRoutes.length > 0) usedApi = 'ors';
+
+        // ── Stufe 2: GH-Fallback wenn ORS fehlschlug ─────────────────────────
+        if (foundRoutes.length === 0) {
+            const ghProfile = currentMode === 'moto' ? 'car' : currentMode === 'road' ? 'bike' : 'mtb';
+            for (const ghKey of getGhKeys()) {
+                const ghPromises = [
+                    fetchGHABRoute(ghKey, ghProfile, startCoords, destCoords, []),
+                    ...viaCoords.map(via => fetchGHABRoute(ghKey, ghProfile, startCoords, destCoords, [via]))
+                ];
+                const ghResults = await Promise.allSettled(ghPromises);
+                ghResults.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+                if (foundRoutes.length > 0) { usedApi = 'gh'; break; }
+            }
         }
 
-        const results = await Promise.allSettled(promises);
-        results.forEach(r => {
-            if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value);
-        });
+        // ── Stufe 3: Script-Fallback (ORS-Retry ohne Avoidance) ──────────────
+        if (foundRoutes.length === 0) {
+            usedFallback = true;
+            usedApi = 'script';
+            const fbPromises = [
+                fetchDirectRoute(key, profile, startCoords, destCoords),
+                ...viaCoords.map(via => fetchRouteViaWaypoint(key, profile, startCoords, via, destCoords))
+            ];
+            const fbResults = await Promise.allSettled(fbPromises);
+            fbResults.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+        }
 
-        foundRoutes.sort((a, b) => {
-            if (curvinessLevel === 1) return a.curviness - b.curviness;
-            return b.curviness - a.curviness;
-        });
+        foundRoutes.sort((a, b) => curvinessLevel === 1 ? a.curviness - b.curviness : b.curviness - a.curviness);
         foundRoutes = foundRoutes.slice(0, 3);
     }
 
@@ -1718,8 +1791,8 @@
 
         // ── Stufe 1: ORS (≤100 km) oder GraphHopper (>100 km) ──────────────
         let apiOk = false;
-        let ghWasAttempted = false;
 
+        // ── Stufe 1a: ORS ─────────────────────────────────────────────────────
         if (distanceKm <= 100) {
             // ORS round_trip (≤100 km) — alle Profile inkl. driving-car (Moto)
             try {
@@ -1733,53 +1806,49 @@
             } catch(e) {
                 console.warn('ORS fehlgeschlagen:', e);
             }
-        } else {
-            // ── >100 km mit Waypoints: ORS Multi-Leg via fetchRoundTrip (nutzt intern fetchLeg mit Highway-Avoidance) ──
-            if (viaPoints.length > 0) {
-                const seeds = [1, 2, 3, 4, 5, 6];
-                const promises = seeds.map((seed, idx) =>
-                    fetchRoundTrip(getApiKey(), profile, startCoords, distance, seed, viaPoints, idx)
-                );
-                const results = await Promise.allSettled(promises);
-                results.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
-                if (foundRoutes.length > 0) { apiOk = true; usedApi = 'ors'; }
-            }
+        } else if (viaPoints.length > 0) {
+            // ORS >100 km mit Waypoints
+            const seeds = [1, 2, 3, 4, 5, 6];
+            const promises = seeds.map((seed, idx) =>
+                fetchRoundTrip(getApiKey(), profile, startCoords, distance, seed, viaPoints, idx)
+            );
+            const results = await Promise.allSettled(promises);
+            results.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+            if (foundRoutes.length > 0) { apiOk = true; usedApi = 'ors'; }
+        }
 
-            // GraphHopper round_trip – Key1 dann Key2 (>100 km ohne Waypoints oder Fallback)
-            if (!apiOk) {
-                ghWasAttempted = true;
-                const ghKey1 = document.getElementById('ghKey').value.trim();
-                const ghKey2 = document.getElementById('ghKey2').value.trim();
-                const ghProfile = currentMode === 'moto' ? 'car' : currentMode === 'road' ? 'bike' : 'mtb';
+        // ── Stufe 1b: GraphHopper (Fallback wenn ORS fehlschlug, oder >100 km ohne Waypoints) ──
+        if (!apiOk) {
+            ghWasAttempted = true;
+            const ghProfile = currentMode === 'moto' ? 'car' : currentMode === 'road' ? 'bike' : 'mtb';
 
-                for (const ghKey of [ghKey1, ghKey2].filter(k => k)) {
-                    try {
-                        const seeds = [
-                            Math.floor(Math.random() * 90000) + 1,
-                            Math.floor(Math.random() * 90000) + 1
-                        ];
-                        const allRoutes = [];
-                        let rateLimited = false;
+            for (const ghKey of getGhKeys()) {
+                try {
+                    const seeds = [
+                        Math.floor(Math.random() * 90000) + 1,
+                        Math.floor(Math.random() * 90000) + 1
+                    ];
+                    const allRoutes = [];
+                    let rateLimited = false;
 
-                        for (const seed of seeds) {
-                            const route = await fetchGHRoundTrip(ghKey, ghProfile, startCoords, distance, seed);
-                            if (route === 'RATE_LIMIT') { rateLimited = true; break; }
-                            if (route) allRoutes.push(route);
-                            await new Promise(r => setTimeout(r, 800));
-                        }
-
-                        if (!rateLimited && allRoutes.length > 0) {
-                            allRoutes.sort((a, b) =>
-                                curvinessLevel === 1 ? a.curviness - b.curviness : b.curviness - a.curviness
-                            );
-                            foundRoutes.push(...allRoutes.slice(0, 3));
-                            apiOk = true;
-                            usedApi = 'gh';
-                            break;
-                        }
-                    } catch(e) {
-                        console.warn('GH fehlgeschlagen:', e);
+                    for (const seed of seeds) {
+                        const route = await fetchGHRoundTrip(ghKey, ghProfile, startCoords, distance, seed);
+                        if (route === 'RATE_LIMIT') { rateLimited = true; break; }
+                        if (route) allRoutes.push(route);
+                        await new Promise(r => setTimeout(r, 800));
                     }
+
+                    if (!rateLimited && allRoutes.length > 0) {
+                        allRoutes.sort((a, b) =>
+                            curvinessLevel === 1 ? a.curviness - b.curviness : b.curviness - a.curviness
+                        );
+                        foundRoutes.push(...allRoutes.slice(0, 3));
+                        apiOk = true;
+                        usedApi = 'gh';
+                        break;
+                    }
+                } catch(e) {
+                    console.warn('GH fehlgeschlagen:', e);
                 }
             }
         }
@@ -1789,10 +1858,13 @@
             usedFallback = true;
             usedApi = 'script';
             const radiusKm     = distanceKm / (2 * Math.PI) * 0.55;
-            const numWaypoints = curvinessLevel === 3 ? 7 : curvinessLevel === 2 ? 4 : 3;
+            const numWaypoints = curvinessLevel === 4 ? getCustomRouteParams(customCurviness).numWaypoints :
+                                   curvinessLevel === 3 ? 7 : curvinessLevel === 2 ? 4 : 3;
+            const fbGhKey = getGhKeys()[0] || '';
+            const fbGhProfile = currentMode === 'moto' ? 'car' : currentMode === 'road' ? 'bike' : 'mtb';
 
             if (viaPoints.length > 0) {
-                // Mit Zwischenziel: einfache Hin-und-Rückfahrt mit leicht versetzten Rückwegen
+                // ORS-Versuch
                 const keys = ['apiKey','apiKey2','apiKey3']
                     .map(id => document.getElementById(id).value.trim()).filter(k => k);
                 const fbKey = keys[0] || key;
@@ -1801,15 +1873,44 @@
                 );
                 const fbResults = await Promise.allSettled(fbPromises);
                 fbResults.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+                // GH-Leg-Fallback wenn ORS-Legs fehlschlugen
+                if (foundRoutes.length === 0 && fbGhKey) {
+                    const ghPromises = [0,1,2,3,4,5].map(v =>
+                        fetchRoundTripViaSimpleGH(fbGhKey, fbGhProfile, startCoords, distance, viaPoints, v)
+                    );
+                    const ghResults = await Promise.allSettled(ghPromises);
+                    ghResults.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+                }
             } else {
-                // Ohne Zwischenziel: Kreisrouten in alle Himmelsrichtungen
-                const angles   = [0, 45, 90, 135, 180, 225, 270, 315];
-                const fbPromises = angles.map(angle => {
-                    const waypoints = generateCircleWaypoints(startCoords, radiusKm, numWaypoints, angle);
-                    return fetchManualRoundTrip(getApiKey(), profile, startCoords, waypoints, angle);
-                });
+                const angles = [0, 45, 90, 135, 180, 225, 270, 315];
+                const allWaypoints = angles.map(angle =>
+                    generateCircleWaypoints(startCoords, radiusKm, numWaypoints, angle)
+                );
+
+                // ORS-Legs
+                const fbPromises = allWaypoints.map((wps, i) =>
+                    fetchManualRoundTrip(getApiKey(), profile, startCoords, wps, angles[i])
+                );
                 const fbResults = await Promise.allSettled(fbPromises);
                 fbResults.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+
+                // GH-Legs wenn ORS fehlschlug
+                if (foundRoutes.length === 0 && fbGhKey) {
+                    const ghPromises = allWaypoints.map((wps, i) =>
+                        fetchManualRoundTripGH(fbGhKey, fbGhProfile, startCoords, wps, angles[i])
+                    );
+                    const ghResults = await Promise.allSettled(ghPromises);
+                    ghResults.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+                }
+
+                // OSRM wenn ORS + GH fehlschlugen (kein Key nötig)
+                if (foundRoutes.length === 0) {
+                    const osrmPromises = allWaypoints.map((wps, i) =>
+                        fetchOSRMRoundTrip(startCoords, wps, angles[i])
+                    );
+                    const osrmResults = await Promise.allSettled(osrmPromises);
+                    osrmResults.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+                }
             }
         }
 
@@ -1856,10 +1957,38 @@
         foundRoutes._desiredDistance = distance;
     }
     // ============== API Calls ==============
+    // Interpoliert Routing-Parameter für Benutzerdefiniert-Modus (level 1–10)
+    function getCustomRouteParams(level) {
+        // Stützpunkte: [level, points, maxOffset, numOut, numWaypoints]
+        const pts = [
+            [1,  3,  0.02, 2, 2],
+            [4,  5,  0.08, 3, 3],
+            [7,  12, 0.30, 7, 7],
+            [8,  14, 0.40, 8, 8],
+            [9,  17, 0.55, 9, 9],
+            [10, 20, 0.70, 10, 10],
+        ];
+        // Lineare Interpolation zwischen den Stützpunkten
+        let lo = pts[0], hi = pts[pts.length - 1];
+        for (let i = 0; i < pts.length - 1; i++) {
+            if (level >= pts[i][0] && level <= pts[i+1][0]) { lo = pts[i]; hi = pts[i+1]; break; }
+        }
+        const t = lo[0] === hi[0] ? 0 : (level - lo[0]) / (hi[0] - lo[0]);
+        const lerp = (a, b) => Math.round((a + (b - a) * t) * 100) / 100;
+        const points      = Math.round(lerp(lo[1], hi[1]));
+        const maxOffset   = lerp(lo[2], hi[2]);
+        const numOut      = Math.round(lerp(lo[3], hi[3]));
+        const numWaypoints = Math.round(lerp(lo[4], hi[4]));
+        // Offsets: symmetrisch um 0, skaliert mit maxOffset
+        const offsets = [-maxOffset, maxOffset, -maxOffset * 0.7, maxOffset * 0.7, maxOffset * 1.2].slice(0, numOut);
+        return { points, offsets, numOut, numRet: Math.max(2, numOut - 2), numWaypoints };
+    }
+
     function getAvoidOptions() {
         if (currentMode === 'road' || currentMode === 'mtb') return {};
-        if (curvinessLevel === 1) return {};
-        return { avoid_features: ['highways'] };
+        const features = ['fords'];
+        if (curvinessLevel > 1) features.push('highways');
+        return { avoid_features: features };
     }
 
     async function fetchDirectRoute(key, profile, start, end) {
@@ -2050,8 +2179,9 @@
                 const retExtraKm = extraKm * 0.4;
 
                 // Anzahl Zwischenpunkte je nach Kurvigkeit
-                const numOut = curvinessLevel === 3 ? 7 : curvinessLevel === 2 ? 4 : 3;
-                const numRet = curvinessLevel === 3 ? 5 : 3;
+                const _cp    = curvinessLevel === 4 ? getCustomRouteParams(customCurviness) : null;
+                const numOut = _cp ? _cp.numOut : curvinessLevel === 3 ? 7 : curvinessLevel === 2 ? 4 : 3;
+                const numRet = _cp ? _cp.numRet : curvinessLevel === 3 ? 5 : 3;
 
                 // Hinweg: Bogenpunkte seitlich von der Start->Via Achse
                 const outLoop = [];
@@ -2090,7 +2220,8 @@
         const opts = getAvoidOptions();
         opts.round_trip = {
             length: distance,
-            points: curvinessLevel === 3 ? 12 : curvinessLevel === 2 ? 5 : 3,
+            points: curvinessLevel === 4 ? getCustomRouteParams(customCurviness).points :
+                    curvinessLevel === 3 ? 12 : curvinessLevel === 2 ? 5 : 3,
             seed: seed
         };
 
@@ -2108,7 +2239,11 @@
             body: JSON.stringify(body)
         });
 
-        if (!res.ok) return null;
+        if (!res.ok) {
+            const txt = await res.text().catch(() => String(res.status));
+            console.warn(`ORS round_trip [${res.status}] Key="${key.slice(0,8)}...":`, txt.slice(0, 300));
+            return null;
+        }
         const data = await res.json();
         return processRoute(data, `Rundkurs #${seed}`);
     }
@@ -2139,7 +2274,9 @@
     // ============== GraphHopper Round Trip ==============
     async function fetchGHRoundTrip(key, profile, start, distanceM, seed, heading) {
         // Free-Plan: kein ch.disable, kein heading (flexible mode nicht verfügbar)
-        const avoidParam = (currentMode !== 'road' && currentMode !== 'mtb' && curvinessLevel > 1) ? '&avoid=motorway' : '';
+        const avoidParam = (currentMode !== 'road' && currentMode !== 'mtb')
+            ? `&avoid=track,ford${curvinessLevel > 1 ? ',motorway' : ''}`
+            : '';
         const url = `${GH_BASE}?key=${key}&profile=${profile}&point=${start[1]},${start[0]}&algorithm=round_trip&round_trip.distance=${distanceM}&round_trip.seed=${seed}&elevation=true&points_encoded=false${avoidParam}`;
 
         try {
@@ -2180,6 +2317,119 @@
             };
         } catch(e) {
             console.error('GH fetch error:', e);
+            return null;
+        }
+    }
+
+    async function fetchOSRMRoundTrip(start, waypoints, angle) {
+        const pts = [start, ...waypoints, start];
+        const coordStr = pts.map(c => `${c[0]},${c[1]}`).join(';');
+        try {
+            const res = await fetch(`${OSRM_BASE}/${coordStr}?overview=full&geometries=geojson`);
+            if (!res.ok) return null;
+            const data = await res.json();
+            if (!data.routes || !data.routes[0]) return null;
+            const route = data.routes[0];
+            const coords = route.geometry.coordinates;
+            if (!coords || coords.length < 2) return null;
+            const latLngs = coords.map(c => [c[1], c[0]]);
+            const curviness = calculateCurviness(coords);
+            const dir = ['N','NO','O','SO','S','SW','W','NW'][Math.round(angle / 45) % 8];
+            return {
+                name: `Rundkurs Richtung ${dir}`,
+                coords, latLngs,
+                distance: route.distance,
+                duration: route.duration,
+                curviness,
+                ascent: 0, descent: 0, maxElev: 0, minElev: 0, geojson: null
+            };
+        } catch(e) { return null; }
+    }
+
+    async function fetchManualRoundTripGH(ghKey, ghProfile, start, waypoints, angle) {
+        const midIdx = Math.ceil(waypoints.length / 2);
+        const firstHalf  = waypoints.slice(0, midIdx);
+        const secondHalf = waypoints.slice(midIdx);
+        const turnaround = firstHalf[firstHalf.length - 1];
+
+        const outRoute = await fetchGHABRoute(ghKey, ghProfile, start, turnaround, firstHalf.slice(0, -1));
+        if (!outRoute) return null;
+        const retRoute = await fetchGHABRoute(ghKey, ghProfile, turnaround, start, secondHalf);
+        if (!retRoute) return null;
+
+        const allCoords = [...outRoute.coords, ...retRoute.coords.slice(1)];
+        const dir = ['N','NO','O','SO','S','SW','W','NW'][Math.round(angle / 45) % 8];
+        return {
+            name: `Rundkurs Richtung ${dir}`,
+            coords: allCoords,
+            latLngs: allCoords.map(c => [c[1], c[0]]),
+            distance: outRoute.distance + retRoute.distance,
+            duration: outRoute.duration + retRoute.duration,
+            curviness: calculateCurviness(allCoords),
+            ascent: (outRoute.ascent || 0) + (retRoute.ascent || 0),
+            descent: (outRoute.descent || 0) + (retRoute.descent || 0),
+            maxElev: 0, minElev: 0, geojson: null
+        };
+    }
+
+    async function fetchRoundTripViaSimpleGH(ghKey, ghProfile, start, distance, viaPoints, variantIndex) {
+        const lastVia  = viaPoints[viaPoints.length - 1];
+        const kmPerLat = 111.0;
+        const kmPerLon = 111.0 * Math.cos(start[1] * Math.PI / 180);
+        const dxKm = (lastVia[0] - start[0]) * kmPerLon;
+        const dyKm = (lastVia[1] - start[1]) * kmPerLat;
+        const lenKm = Math.sqrt(dxKm * dxKm + dyKm * dyKm) || 1;
+        const pxKm  = -dyKm / lenKm;
+        const pyKm  =  dxKm / lenKm;
+        const offsets  = [0, 0.15, -0.15, 0.30, -0.30, 0.08];
+        const offsetKm = (offsets[variantIndex % offsets.length] || 0) * lenKm;
+        const midRetLng = start[0] + (dxKm * 0.5 + pxKm * offsetKm) / kmPerLon;
+        const midRetLat = start[1] + (dyKm * 0.5 + pyKm * offsetKm) / kmPerLat;
+
+        const outRoute = await fetchGHABRoute(ghKey, ghProfile, start, lastVia, viaPoints.slice(0, -1));
+        if (!outRoute) return null;
+        const retVia   = offsetKm !== 0 ? [[midRetLng, midRetLat]] : [];
+        const retRoute = await fetchGHABRoute(ghKey, ghProfile, lastVia, start, retVia);
+        if (!retRoute) return null;
+
+        const allCoords = [...outRoute.coords, ...retRoute.coords.slice(1)];
+        return {
+            name: 'Rundkurs via Zwischenziele',
+            coords: allCoords,
+            latLngs: allCoords.map(c => [c[1], c[0]]),
+            distance: outRoute.distance + retRoute.distance,
+            duration: outRoute.duration + retRoute.duration,
+            curviness: calculateCurviness(allCoords),
+            ascent: (outRoute.ascent || 0) + (retRoute.ascent || 0),
+            descent: (outRoute.descent || 0) + (retRoute.descent || 0),
+            maxElev: 0, minElev: 0, geojson: null
+        };
+    }
+
+    async function fetchGHABRoute(key, ghProfile, start, end, viaPoints) {
+        let url = `${GH_BASE}?key=${key}&profile=${ghProfile}&point=${start[1]},${start[0]}`;
+        for (const via of viaPoints) url += `&point=${via[1]},${via[0]}`;
+        url += `&point=${end[1]},${end[0]}&elevation=true&points_encoded=false`;
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            if (!res.ok || !data.paths || !data.paths[0]) return null;
+            const path = data.paths[0];
+            const coords = path.points.coordinates;
+            if (!coords || coords.length < 2) return null;
+            const latLngs = coords.map(c => [c[1], c[0]]);
+            const curviness = calculateCurviness(coords);
+            return {
+                name: viaPoints.length > 0 ? 'Alternative Route' : 'Direkte Route',
+                coords, latLngs,
+                distance: path.distance,
+                duration: path.time / 1000,
+                curviness,
+                ascent: Math.round(path.ascend || 0),
+                descent: Math.round(path.descend || 0),
+                maxElev: 0, minElev: 0, geojson: null
+            };
+        } catch(e) {
             return null;
         }
     }
@@ -2399,7 +2649,7 @@
                     ${routeType === 'ab' ? `<span>▼ ${route.descent} hm</span>` : ''}
                 </div>
                 <div class="route-actions">
-                    <button class="btn-secondary" onclick="exportGPX(${idx})">GPX Export</button>
+                    <button class="btn-secondary" onclick="exportGPX(${idx})">GPX</button>
                     <button class="btn-secondary" onclick="openInGoogleMaps(${idx})">Google Maps</button>
                 </div>
             `;
@@ -2439,6 +2689,7 @@
     }
 
     // ============== Export / Open ==============
+
     function exportGPX(idx) {
         const route = foundRoutes[idx];
         let gpx = `<?xml version="1.0" encoding="UTF-8"?>
@@ -2477,30 +2728,36 @@
             cumDist.push(totalDist);
         }
 
-        // Klassisches /dir/-Format mit 20 geografisch gleichmäßigen Wegpunkten
-        const NUM_WP = 20;
-        const minDistM = Math.max(500, totalDist / (NUM_WP * 2));
+        // Schritt 1: 20 Wegpunkte geografisch gleichmäßig verteilen
+        const NUM_WP   = 20;
         const stepDist = totalDist / (NUM_WP + 1);
-
-        const allPoints = [`${coords[0][1]},${coords[0][0]}`];
-        let lastDist = 0;
+        const wps      = [coords[0]];
         for (let j = 1; j <= NUM_WP; j++) {
-            const targetDist = j * stepDist;
-            if (targetDist >= totalDist) break;
+            const target = j * stepDist;
+            if (target >= totalDist) break;
             let best = 1;
             for (let i = 1; i < coords.length - 1; i++) {
-                if (Math.abs(cumDist[i] - targetDist) < Math.abs(cumDist[best] - targetDist)) best = i;
+                if (Math.abs(cumDist[i] - target) < Math.abs(cumDist[best] - target)) best = i;
             }
-            if (cumDist[best] - lastDist >= minDistM) {
-                allPoints.push(`${coords[best][1]},${coords[best][0]}`);
-                lastDist = cumDist[best];
+            wps.push(coords[best]);
+        }
+        wps.push(coords[coords.length - 1]);
+
+        // Schritt 2: Zipfel-Pass — Wegpunkt B entfernen wenn A→B→C
+        // eine Richtungsumkehr > 110° erzeugt
+        function angleDiff(a, b) { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
+        let changed = true;
+        while (changed && wps.length > 2) {
+            changed = false;
+            for (let i = 1; i < wps.length - 1; i++) {
+                const bAB = bearing(wps[i-1][1], wps[i-1][0], wps[i][1],   wps[i][0]);
+                const bBC = bearing(wps[i][1],   wps[i][0],   wps[i+1][1], wps[i+1][0]);
+                if (angleDiff(bAB, bBC) > 110) { wps.splice(i, 1); changed = true; break; }
             }
         }
-        allPoints.push(`${coords[coords.length-1][1]},${coords[coords.length-1][0]}`);
 
-        // Moto: Autobahnen immer vermeiden (alle Kurvigkeitsstufen)
         const avoidStr = currentMode === 'moto' ? '?avoid=highways' : '';
-        return `https://www.google.com/maps/dir/${allPoints.join('/')}${avoidStr}`;
+        return `https://www.google.com/maps/dir/${wps.map(c => `${c[1]},${c[0]}`).join('/')}${avoidStr}`;
     }
 
     function openInGoogleMaps(idx) {
