@@ -876,9 +876,102 @@
             flex-wrap: wrap;
         }
 
+        /* ─── Richtungswahl (Rundkurs) ───────────────────────── */
+        .dir-picker {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            margin-top: 2px;
+        }
+        .dir-btn {
+            padding: 9px 4px;
+            border: 1px solid var(--line-soft);
+            border-radius: var(--r-sm);
+            background: var(--card);
+            color: var(--muted);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            font-family: 'Cormorant Garant', sans-serif;
+            font-size: 0.76em;
+            letter-spacing: 0.06em;
+            line-height: 1;
+        }
+        .dir-btn:hover { background: var(--card-hover); color: var(--text-soft); border-color: rgba(196, 149, 106, 0.3); }
+        .dir-btn:active { transform: scale(0.94); transition: transform 0.1s; }
+        .dir-btn.active {
+            border-color: var(--accent-secondary);
+            background: var(--accent-secondary);
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 2px 12px var(--accent-sec-glow);
+        }
+        .dir-btn.dir-auto { font-size: 0.7em; }
+        .dir-hint {
+            font-size: 0.72em;
+            color: var(--muted);
+            margin-top: 7px;
+            line-height: 1.35;
+        }
+        .dir-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 600;
+            color: var(--accent-secondary);
+        }
+
         /* ─── Map ──────────────────────────────────────────────── */
+        #map-wrap {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+            display: flex;
+        }
         #map { flex: 1; min-width: 0; background: #e5e5e5; }
         @media (prefers-color-scheme: dark) { #map { background: #262626; } }
+
+        /* Richtungspfeile auf der Route */
+        .route-arrow { pointer-events: none; }
+        .route-arrow svg { display: block; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35)); }
+
+        /* ─── Karte vergrößern / Sidebar einklappen ───────────── */
+        #mapToggle {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1200;
+            width: 30px;
+            height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--line-soft);
+            border-radius: 10px;
+            background: var(--glass-heavy);
+            color: var(--accent);
+            font-size: 0.95em;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.16);
+            transition: background 0.18s, transform 0.18s;
+        }
+        #mapToggle:hover { background: var(--card-hover); }
+        #mapToggle:active { transform: translateY(-50%) scale(0.92); }
+
+        #sidebar {
+            transition: width 0.34s cubic-bezier(0.32, 0.72, 0, 1),
+                        min-width 0.34s cubic-bezier(0.32, 0.72, 0, 1),
+                        opacity 0.2s;
+        }
+        #sidebar.collapsed {
+            width: 0;
+            min-width: 0;
+            max-width: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
 
         /* ─── Map Hint ─────────────────────────────────────────── */
         .map-hint {
@@ -958,6 +1051,25 @@
                 background: var(--line-soft);
                 border-radius: 3px;
             }
+            /* Sidebar ist auf Mobile ein Bottom-Sheet – einklappen = ganz weg */
+            #sidebar.collapsed {
+                width: 100%;
+                max-width: unset;
+                opacity: 1;
+                transform: translateY(100%);
+                pointer-events: none;
+            }
+            #mapToggle {
+                left: auto;
+                right: 12px;
+                top: auto;
+                bottom: 122px;
+                transform: none;
+                width: 42px;
+                height: 42px;
+                border-radius: 50%;
+            }
+            #mapToggle:active { transform: scale(0.92); }
             .logo-bar { padding: 10px 20px 10px; }
             .logo-wordmark { font-size: 1.7rem; }
             .logo-sub { display: none; }
@@ -1109,7 +1221,23 @@
                     <h3>Rundkurs</h3>
                     <div class="input-group">
                         <label>Gewünschte Distanz (km)</label>
-                        <input type="number" id="roundDistance" value="100" min="10" max="500" step="10">
+                        <input type="number" id="roundDistance" value="100" min="10" max="500" step="10"
+                               oninput="updateDirectionPreview()">
+                    </div>
+                    <div class="input-group" id="directionGroup">
+                        <label>Richtung</label>
+                        <div class="dir-picker">
+                            <div class="dir-btn" data-dir="315" onclick="setRoundDirection('315')">NW</div>
+                            <div class="dir-btn" data-dir="0"   onclick="setRoundDirection('0')">N</div>
+                            <div class="dir-btn" data-dir="45"  onclick="setRoundDirection('45')">NO</div>
+                            <div class="dir-btn" data-dir="270" onclick="setRoundDirection('270')">W</div>
+                            <div class="dir-btn dir-auto active" data-dir="auto" onclick="setRoundDirection('auto')">AUTO</div>
+                            <div class="dir-btn" data-dir="90"  onclick="setRoundDirection('90')">O</div>
+                            <div class="dir-btn" data-dir="225" onclick="setRoundDirection('225')">SW</div>
+                            <div class="dir-btn" data-dir="180" onclick="setRoundDirection('180')">S</div>
+                            <div class="dir-btn" data-dir="135" onclick="setRoundDirection('135')">SO</div>
+                        </div>
+                        <div class="dir-hint" id="dirHint">Automatisch – Richtung wird frei gewählt.</div>
                     </div>
                     <div id="viaContainer">
                         <label style="margin-top:8px;">Zwischenziele (optional)</label>
@@ -1197,7 +1325,7 @@
                     <div id="routeCards"></div>
                 </div>
 
-            </div></div><div id="map"></div>
+            </div></div><div id="map-wrap"><div id="map"></div><div id="mapToggle" title="Karte vergrößern / Panel einblenden" onclick="toggleMapSize()">‹</div></div>
     </div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
     // ── Splash-Timing: min. 3s, wartet auf Map-Ready ──────────────────────
@@ -1261,6 +1389,30 @@
         }, true);
     });
 
+    // ── Karte vergrößern: Sidebar/Panel einklappen ──
+    function toggleMapSize() {
+        const sidebar = document.getElementById('sidebar');
+        const collapsed = sidebar.classList.toggle('collapsed');
+        document.getElementById('mapToggle').textContent = collapsed ? '›' : '‹';
+        try { localStorage.setItem('map_expanded', collapsed ? '1' : '0'); } catch(e) {}
+        // Leaflet muss die neue Containergröße kennen – während + nach der Transition
+        const t0 = performance.now();
+        const tick = () => {
+            if (map) map.invalidateSize({ animate: false });
+            if (performance.now() - t0 < 400) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        let expanded = false;
+        try { expanded = localStorage.getItem('map_expanded') === '1'; } catch(e) {}
+        if (expanded) {
+            document.getElementById('sidebar').classList.add('collapsed');
+            document.getElementById('mapToggle').textContent = '›';
+        }
+    });
+
     // ============== State ==============
     let map, currentMode = 'moto', routeType = 'ab', curvinessLevel = 2;
     let customCurviness = 7, avoidPrimary = false;
@@ -1268,6 +1420,9 @@
     let via1Coords = null, via2Coords = null;
     let startMarker = null, destMarker = null, via1Marker = null, via2Marker = null;
     let routeLayers = [];
+    let arrowLayers = [];        // Richtungspfeile je Route (nur aktive Route sichtbar)
+    let roundDirection = null;   // null = automatisch, sonst Grad (0 = Nord)
+    let dirPreviewLayer = null;  // gestrichelter Vorschau-Pfeil bei der Planung
     let foundRoutes = [];
     let usedFallback = false;
     let usedApi = '';   // 'ors' | 'gh' | 'script'
@@ -1477,6 +1632,7 @@
             switchRouteType(routeType);
         }
         clearRoutes();
+        updateDirectionPreview();
     }
 
     function switchRouteType(type) {
@@ -1489,6 +1645,158 @@
             document.getElementById('destGroup').classList.remove('hidden');
             document.getElementById('round-options').classList.add('hidden');
         }
+        updateDirectionPreview();
+    }
+
+    // ============== Richtung (Rundkurs) ==============
+    const COMPASS = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'];
+
+    function compassLabel(deg) {
+        return COMPASS[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
+    }
+
+    // Kleinster Winkelabstand zwischen zwei Peilungen (0–180°)
+    function angleDelta(a, b) {
+        const d = Math.abs((((a - b) % 360) + 360) % 360);
+        return d > 180 ? 360 - d : d;
+    }
+
+    // Punkt in Richtung bearing, distKm entfernt vom Startpunkt ([lng, lat])
+    function pointAtBearing(start, bearingDeg, distKm) {
+        const R = 6371;
+        const lat1 = start[1] * Math.PI / 180;
+        const lng1 = start[0] * Math.PI / 180;
+        const d = distKm / R;
+        const brg = bearingDeg * Math.PI / 180;
+        const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(brg));
+        const lng2 = lng1 + Math.atan2(
+            Math.sin(brg) * Math.sin(d) * Math.cos(lat1),
+            Math.cos(d) - Math.sin(lat1) * Math.sin(lat2)
+        );
+        return [lng2 * 180 / Math.PI, lat2 * 180 / Math.PI];
+    }
+
+    // Kumulierte Streckenlängen entlang einer Koordinatenliste
+    function cumulativeDistances(coords) {
+        const cum = [0];
+        let total = 0;
+        for (let i = 1; i < coords.length; i++) {
+            total += haversine(coords[i-1][1], coords[i-1][0], coords[i][1], coords[i][0]);
+            cum.push(total);
+        }
+        return { cum, total };
+    }
+
+    // In welche Richtung startet die Route? Peilung Start -> Punkt nach ~15 % der Strecke
+    function startBearing(coords) {
+        if (!coords || coords.length < 2) return 0;
+        const { cum, total } = cumulativeDistances(coords);
+        if (total <= 0) return 0;
+        const target = Math.min(Math.max(total * 0.15, 1000), 10000);
+        let idx = coords.length - 1;
+        for (let i = 1; i < coords.length; i++) {
+            if (cum[i] >= target) { idx = i; break; }
+        }
+        return bearing(coords[0][1], coords[0][0], coords[idx][1], coords[idx][0]);
+    }
+
+    // Geschlossene Schleife? (Start und Ende < 500 m auseinander)
+    function isLoop(coords) {
+        if (!coords || coords.length < 3) return false;
+        const a = coords[0], b = coords[coords.length - 1];
+        return haversine(a[1], a[0], b[1], b[0]) < 500;
+    }
+
+    function setRoundDirection(val) {
+        roundDirection = val === 'auto' ? null : parseInt(val, 10);
+        document.querySelectorAll('.dir-btn').forEach(b =>
+            b.classList.toggle('active', b.dataset.dir === String(val)));
+        document.getElementById('dirHint').textContent = roundDirection === null
+            ? 'Automatisch – Richtung wird frei gewählt.'
+            : `Route startet Richtung ${compassLabel(roundDirection)} (${roundDirection}°).`;
+        updateDirectionPreview();
+    }
+
+    // Pfeil-Icon, das in die angegebene Peilung zeigt
+    function arrowIcon(bearingDeg, color, size) {
+        size = size || 17;
+        return L.divIcon({
+            className: 'route-arrow',
+            html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="transform:rotate(${bearingDeg}deg)">
+                     <path d="M12 1.5 L19.5 21 L12 16.2 L4.5 21 Z" fill="${color}"
+                           stroke="rgba(255,255,255,0.9)" stroke-width="1.4" stroke-linejoin="round"/>
+                   </svg>`,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2]
+        });
+    }
+
+    // Gestrichelter Vorschau-Pfeil ab Startpunkt – zeigt schon bei der Planung,
+    // wohin der Rundkurs losgeht
+    function updateDirectionPreview() {
+        if (dirPreviewLayer) { map.removeLayer(dirPreviewLayer); dirPreviewLayer = null; }
+        if (!map || routeType !== 'round' || roundDirection === null || !startCoords) return;
+
+        const distKm = parseFloat(document.getElementById('roundDistance').value) || 100;
+        const armKm  = Math.max(2, distKm / (2 * Math.PI) * 0.55);
+        const tip    = pointAtBearing(startCoords, roundDirection, armKm);
+        const color  = '#7EB09B';
+
+        dirPreviewLayer = L.layerGroup([
+            L.polyline([[startCoords[1], startCoords[0]], [tip[1], tip[0]]], {
+                color, weight: 3, opacity: 0.75, dashArray: '7 8', interactive: false
+            }),
+            L.marker([tip[1], tip[0]], { icon: arrowIcon(roundDirection, color, 22), interactive: false })
+        ]).addTo(map);
+    }
+
+    // Richtungspfeile entlang einer Route
+    function buildDirectionArrows(coords, color) {
+        const group = L.layerGroup();
+        if (!coords || coords.length < 2) return group;
+        const { cum, total } = cumulativeDistances(coords);
+        if (total <= 0) return group;
+
+        const num = Math.min(14, Math.max(4, Math.round(total / 4000)));
+        for (let k = 0; k < num; k++) {
+            const target = total * (k + 0.5) / num;
+            let i = 1;
+            while (i < coords.length - 1 && cum[i] < target) i++;
+            // ~150 m vorausschauen, damit die Peilung nicht am Einzelsegment zappelt
+            let j = i;
+            while (j < coords.length - 1 && cum[j] - cum[i] < 150) j++;
+            if (j <= i) j = Math.min(i + 1, coords.length - 1);
+            const b = bearing(coords[i][1], coords[i][0], coords[j][1], coords[j][0]);
+            group.addLayer(L.marker([coords[i][1], coords[i][0]], {
+                icon: arrowIcon(b, color), interactive: false
+            }));
+        }
+        return group;
+    }
+
+    function showArrowsFor(idx) {
+        arrowLayers.forEach(g => { if (g && map.hasLayer(g)) map.removeLayer(g); });
+        if (arrowLayers[idx]) arrowLayers[idx].addTo(map);
+    }
+
+    // Fahrtrichtung des Rundkurses umkehren
+    function reverseRoute(idx) {
+        const route = foundRoutes[idx];
+        if (!route) return;
+        route.coords  = route.coords.slice().reverse();
+        route.latLngs = route.coords.map(c => [c[1], c[0]]);
+        route.startBearing = startBearing(route.coords);
+        route.name = `Rundkurs Richtung ${compassLabel(route.startBearing)}`;
+
+        routeLayers[idx].setLatLngs(route.latLngs);
+        const color = COLORS[idx % COLORS.length];
+        if (arrowLayers[idx] && map.hasLayer(arrowLayers[idx])) map.removeLayer(arrowLayers[idx]);
+        arrowLayers[idx] = buildDirectionArrows(route.coords, color);
+
+        const badge = document.getElementById(`dirBadge-${idx}`);
+        if (badge) badge.innerHTML = `🧭 Richtung ${compassLabel(route.startBearing)}`;
+
+        highlightRoute(idx);
     }
 
     function setCurviness(level) {
@@ -1652,6 +1960,8 @@
         else if (which === 'dest') destMarker = newMarker;
         else if (which === 'via1') via1Marker = newMarker;
         else if (which === 'via2') via2Marker = newMarker;
+
+        if (which === 'start') updateDirectionPreview();
     }
 
     function removeMarker(which) {
@@ -1779,6 +2089,52 @@
         return points;
     }
 
+    // Rundkurs in einer vom Nutzer gewählten Richtung.
+    // ORS/GH round_trip lassen sich nicht steuern – deshalb über Bogenpunkte,
+    // deren Kreis so gedreht wird, dass die Route in die Wunschrichtung startet.
+    async function searchDirectedRoundTrips(key, profile, distanceKm) {
+        const radiusKm = distanceKm / (2 * Math.PI) * 0.55;
+        const numWaypoints = curvinessLevel === 4 ? getCustomRouteParams(customCurviness).numWaypoints :
+                             curvinessLevel === 3 ? 7 : curvinessLevel === 2 ? 4 : 3;
+        // Wunschrichtung plus zwei leichte Varianten für Auswahl
+        const angles = [roundDirection, (roundDirection + 330) % 360, (roundDirection + 30) % 360];
+        const allWaypoints = angles.map(a => generateCircleWaypoints(startCoords, radiusKm, numWaypoints, a));
+
+        const collect = results => {
+            results.forEach(r => { if (r.status === 'fulfilled' && r.value) foundRoutes.push(r.value); });
+            return foundRoutes.length > 0;
+        };
+
+        // Stufe 1: ORS-Teilstrecken
+        if (collect(await Promise.allSettled(allWaypoints.map((wps, i) =>
+                fetchManualRoundTrip(getApiKey(), profile, startCoords, wps, angles[i]))))) {
+            usedApi = 'ors';
+            return true;
+        }
+
+        // Stufe 2: GraphHopper-Teilstrecken
+        const ghKey = getGhKeys()[0] || '';
+        const ghProfile = currentMode === 'moto' ? 'car' : currentMode === 'road' ? 'bike' : 'mtb';
+        if (ghKey) {
+            ghWasAttempted = true;
+            if (collect(await Promise.allSettled(allWaypoints.map((wps, i) =>
+                    fetchManualRoundTripGH(ghKey, ghProfile, startCoords, wps, angles[i]))))) {
+                usedApi = 'gh';
+                return true;
+            }
+        }
+
+        // Stufe 3: OSRM (ohne Key)
+        if (collect(await Promise.allSettled(allWaypoints.map((wps, i) =>
+                fetchOSRMRoundTrip(startCoords, wps, angles[i]))))) {
+            usedApi = 'script';
+            usedFallback = true;
+            return true;
+        }
+
+        return false;
+    }
+
     async function searchRoundTrips(key, profile) {
         const distanceKm = parseFloat(document.getElementById('roundDistance').value);
         const distance   = distanceKm * 1000;
@@ -1792,8 +2148,13 @@
         // ── Stufe 1: ORS (≤100 km) oder GraphHopper (>100 km) ──────────────
         let apiOk = false;
 
+        // ── Stufe 0: Wunschrichtung gesetzt → gezielte Suche ──────────────────
+        if (roundDirection !== null && viaPoints.length === 0) {
+            apiOk = await searchDirectedRoundTrips(key, profile, distanceKm);
+        }
+
         // ── Stufe 1a: ORS ─────────────────────────────────────────────────────
-        if (distanceKm <= 100) {
+        if (!apiOk && distanceKm <= 100) {
             // ORS round_trip (≤100 km) — alle Profile inkl. driving-car (Moto)
             try {
                 const seeds = Array.from({length: 6}, () => Math.floor(Math.random() * 900) + 1);
@@ -1806,7 +2167,7 @@
             } catch(e) {
                 console.warn('ORS fehlgeschlagen:', e);
             }
-        } else if (viaPoints.length > 0) {
+        } else if (!apiOk && viaPoints.length > 0) {
             // ORS >100 km mit Waypoints
             const seeds = [1, 2, 3, 4, 5, 6];
             const promises = seeds.map((seed, idx) =>
@@ -1937,6 +2298,37 @@
             const clean = foundRoutes.filter(r => r._zipfelKm < 2);
             if (clean.length > 0) foundRoutes = clean;
             else foundRoutes.sort((a, b) => a._zipfelKm - b._zipfelKm);
+        }
+
+        // ── Richtung: passende Routen bevorzugen, Schleifen ggf. umdrehen ────
+        if (roundDirection !== null && foundRoutes.length > 0) {
+            foundRoutes.forEach(r => {
+                const fwd = startBearing(r.coords);
+                // Eine Schleife lässt sich gratis andersherum fahren – wenn sie
+                // rückwärts besser zur Wunschrichtung passt, gleich umdrehen.
+                if (isLoop(r.coords)) {
+                    const revCoords = r.coords.slice().reverse();
+                    const rev = startBearing(revCoords);
+                    if (angleDelta(rev, roundDirection) + 15 < angleDelta(fwd, roundDirection)) {
+                        r.coords  = revCoords;
+                        r.latLngs = revCoords.map(c => [c[1], c[0]]);
+                        r.startBearing = rev;
+                        return;
+                    }
+                }
+                r.startBearing = fwd;
+            });
+
+            const matching = foundRoutes.filter(r => angleDelta(r.startBearing, roundDirection) <= 60);
+            if (matching.length > 0) {
+                foundRoutes = matching;
+            } else {
+                // Nichts passt genau – die drei richtungsnächsten Routen behalten,
+                // sonst würde die Sortierung danach die Richtung wieder wegwerfen.
+                foundRoutes = foundRoutes.slice().sort((a, b) =>
+                    angleDelta(a.startBearing, roundDirection) - angleDelta(b.startBearing, roundDirection)
+                ).slice(0, 3);
+            }
         }
 
         const inRange = foundRoutes.filter(r => Math.abs(r.distance - distance) <= distance * 0.10);
@@ -2623,12 +3015,20 @@
         }
 
         foundRoutes.forEach((route, idx) => {
+            const color = COLORS[idx % COLORS.length];
             const layer = L.polyline(route.latLngs, {
-                color: COLORS[idx % COLORS.length],
+                color,
                 weight: idx === 0 ? 5 : 4,
                 opacity: idx === 0 ? 0.9 : 0.6
             }).addTo(map);
             routeLayers.push(layer);
+
+            // Fahrtrichtung sichtbar machen
+            route.startBearing = startBearing(route.coords);
+            arrowLayers.push(buildDirectionArrows(route.coords, color));
+            if (routeType === 'round') {
+                route.name = `Rundkurs Richtung ${compassLabel(route.startBearing)}`;
+            }
 
             const curvinessLabel = route.curviness > 500 ? 'Sehr kurvig' :
                                    route.curviness > 300 ? 'Kurvig' :
@@ -2638,7 +3038,7 @@
             card.className = `route-card ${idx === 0 ? 'active' : ''}`;
             card.innerHTML = `
                 <div class="route-header">
-                    <span class="route-name" style="color:${COLORS[idx % COLORS.length]}">Route ${idx + 1}</span>
+                    <span class="route-name" style="color:${color}">Route ${idx + 1}</span>
                     <span class="curviness-badge">${curvinessLabel} (${route.curviness}°/km)</span>
                     ${usedApi ? `<span class="api-badge">${usedApi === 'script' ? 'Script' : usedApi.toUpperCase()}</span>` : ''}
                 </div>
@@ -2647,10 +3047,12 @@
                     <span>⏱ ${formatDuration(route.duration)}</span>
                     <span>▲ ${route.ascent} hm</span>
                     ${routeType === 'ab' ? `<span>▼ ${route.descent} hm</span>` : ''}
+                    <span class="dir-badge" id="dirBadge-${idx}">🧭 Richtung ${compassLabel(route.startBearing)}</span>
                 </div>
                 <div class="route-actions">
                     <button class="btn-secondary" onclick="exportGPX(${idx})">GPX</button>
                     <button class="btn-secondary" onclick="openInGoogleMaps(${idx})">Google Maps</button>
+                    ${routeType === 'round' ? `<button class="btn-secondary" onclick="reverseRoute(${idx})">⟲ Richtung umkehren</button>` : ''}
                 </div>
             `;
             card.addEventListener('click', (e) => {
@@ -2661,6 +3063,7 @@
         });
 
         if (foundRoutes.length > 0) {
+            showArrowsFor(0);
             map.fitBounds(routeLayers[0].getBounds().pad(0.1));
         }
     }
@@ -2671,12 +3074,15 @@
             l.setStyle({ weight: i === idx ? 6 : 3, opacity: i === idx ? 0.9 : 0.4 });
             if (i === idx) l.bringToFront();
         });
+        showArrowsFor(idx);
         map.fitBounds(routeLayers[idx].getBounds().pad(0.1));
     }
 
     function clearRoutes() {
         routeLayers.forEach(l => map.removeLayer(l));
+        arrowLayers.forEach(g => { if (g && map.hasLayer(g)) map.removeLayer(g); });
         routeLayers = [];
+        arrowLayers = [];
         foundRoutes = [];
         document.getElementById('routeCards').innerHTML = '';
         document.getElementById('results').style.display = 'none';
